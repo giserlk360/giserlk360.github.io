@@ -1,0 +1,1 @@
+import{_ as a,o as s,c as t,h as c,q as o,v as _,p as n,m as d,b as p}from"./index.4bf9b5eb.js";const i=e=>(n("data-v-e6c6abaa"),e=e(),d(),e),r={class:"main-box"},u=i(()=>p("div",{id:"container"},null,-1)),l={__name:"index",setup(e){return(x,h)=>(s(),t("div",r,[u,c(o(_))]))}},v=a(l,[["__scopeId","data-v-e6c6abaa"]]);export{v as default};
