@@ -13,11 +13,11 @@ function importCSS(filePath) {
 }
 
 function importFiles() {
-  importCSS('/libs/gis3d/Cesium/Widgets/widgets.css')
-  importCSS('/libs/gis3d/mars3d/mars3d.css')
+  importCSS('https://giserlk.space/libs/gis3d/Cesium/Widgets/widgets.css')
+  importCSS('https://giserlk.space/libs/gis3d/mars3d/mars3d.css')
 
-  importJS('/libs/gis3d/Cesium/Cesium.js')
-  importJS('/libs/gis3d/mars3d/mars3d.js')
+  importJS('https://giserlk.space/libs/gis3d/Cesium/Cesium.js')
+  importJS('https://giserlk.space/libs/gis3d/mars3d/mars3d.js')
 }
 
 importFiles()
