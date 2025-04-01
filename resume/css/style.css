@@ -43,13 +43,26 @@ body {
 
 /* 头部样式 */
 header {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%),
-                url('../img/map-bg.png');
-    background-blend-mode: overlay;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    background-blend-mode: soft-light;
     background-size: cover;
+    background-position: center;
+    background-opacity: 0.85;
     padding: 40px;
     color: white;
     position: relative;
+    box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.2);
+}
+
+header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30px;
+    background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.1));
+    pointer-events: none;
 }
 
 .profile {
@@ -86,10 +99,12 @@ header {
     align-items: center;
     gap: 8px;
     font-size: 0.95rem;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.15);
     padding: 5px 10px;
     border-radius: 20px;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .contact-info i {
@@ -108,10 +123,11 @@ header {
 
 .profile-summary {
     padding: 20px;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.15);
     border-radius: var(--border-radius);
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(8px);
     border-left: 4px solid var(--accent-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .profile-summary h2 {
