@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "notes": "新版本更新内容：\n- 修复了一些已知问题\n- 优化了应用性能\n- 添加了新功能",
+  "pub_date": "2023-12-01T12:00:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRd2tRWGUycWl2MkJWYkQyTjdvUXlNVVlXYnBodkNVcXZhQzJ6UUsyOHRpekhGc2VVTE00a2U3aXBkNmJOQ0lhLzcrRzNTRlhvTkFQYWpZcFl4d1FjcmtOYmttTmswZGdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzQ4NTA5ODI0CWZpbGU6ZXhhbXBsZS10YXVyaS1hcHBfMC4yLjBfeDY0LXNldHVwLmV4ZS56aXAKQTlySDVyRVRCV2syMnJGUy9OVHlqVVpZeXd4UmNpUkhiS0NjVHk5UnA5eG1XM29PU01WajVMMlAvdUVFM3NIL3REWDF5R0pTSjhpMlhBZzZ2SUZIQlE9PQo=",
+      "url": "https://giserlk.top/tauri/downloads/example-tauri-app_0.2.0_x64-setup.exe.zip"
+    },
+    "darwin-x86_64": {
+      "signature": "YOUR_MACOS_SIGNATURE_HERE",
+      "url": "https://giserlk.top/tauri/downloads/example-tauri-app_0.2.0_x64.app.tar.gz"
+    },
+    "darwin-aarch64": {
+      "signature": "YOUR_MACOS_ARM_SIGNATURE_HERE",
+      "url": "https://giserlk.top/tauri/downloads/example-tauri-app_0.2.0_aarch64.app.tar.gz"
+    }
+  }
+}
