@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaflet Radar Scan Plugin Demo</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Radar Scan Plugin CSS -->
+    <link rel="stylesheet" href="L.RadarScan.css" />
+    <!-- Radar Scan Plugin JS -->
+    <script src="L.RadarScan.js"></script>
+
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <script>
+
+        // Create map
+        const map = L.map('map').setView([39.9042, 116.4074], 12);
+
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // Create radar scan
+        const radarScan = L.radarScan({
+            center: [39.9042, 116.4074],
+            radius: 2000,
+            sweepAngle: 60,
+            animationDuration: 3000
+        }).addTo(map);
+
+
+        // Start scanning
+        radarScan.startScan();
+    </script>
+</body>
+
+</html>
