@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>通用数据转换工具</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .result-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>市域网格数据转换Geojson</h1>
+
+        <div class="config-section">
+            <h3>配置参数</h3>
+
+            <div class="form-group">
+                <label for="inputFile">输入文件 (JSON):</label>
+                <input type="file" id="inputFile" accept=".json" />
+            </div>
+
+            <div class="form-group">
+                <label for="coordinateField">坐标字段名称:</label>
+                <input type="text" id="coordinateField" value="dept_area_point"
+                    placeholder="例如: dept_area_point, coordinates, points" />
+            </div>
+
+            <div class="form-group">
+                <label for="outputType">输出类型:</label>
+                <select id="outputType">
+                    <option value="geojson">GeoJSON (FeatureCollection)</option>
+                    <!-- <option value="points">点坐标数组</option>
+                    <option value="lines">线坐标数组</option>
+                    <option value="heatmap">热力图数据</option> -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="outputFileName">输出文件名:</label>
+                <input type="text" id="outputFileName" value="converted_data.json" />
+            </div>
+
+            <!-- <div class="form-group">
+                <label for="customConfig">自定义配置 (JSON):</label>
+                <textarea id="customConfig"
+                    placeholder='{"weight": [11334, 7883, 5598], "namePrefix": "测试点"}'></textarea>
+            </div> -->
+        </div>
+
+        <div>
+            <button class="btn" onclick="convertData()">开始转换</button>
+            <button class="btn btn-secondary" onclick="clearLog()">清空日志</button>
+            <button class="btn btn-secondary" onclick="exportData()">导出数据</button>
+        </div>
+
+        <div class="result-section">
+            <h3>转换结果</h3>
+            <div id="status"></div>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        let exportArr = [];
+        let originalData = null;
+
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logElement.textContent += logEntry;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusElement = document.getElementById('status');
+            statusElement.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+            document.getElementById('status').innerHTML = '';
+        }
+
+        function convertData() {
+            const fileInput = document.getElementById('inputFile');
+            const coordinateField = document.getElementById('coordinateField').value.trim();
+            const outputType = document.getElementById('outputType').value;
+            const customConfig = document.getElementById('customConfig').value;
+
+            if (!fileInput.files[0]) {
+                showStatus('请选择输入文件', 'error');
+                return;
+            }
+
+            if (!coordinateField) {
+                showStatus('请输入坐标字段名称', 'error');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                try {
+                    originalData = JSON.parse(e.target.result);
+                    log(`成功读取文件: ${file.name}`);
+                    log(`原始数据长度: ${Array.isArray(originalData) ? originalData.length : '非数组数据'}`);
+
+                    processData(coordinateField, outputType, customConfig);
+                } catch (error) {
+                    showStatus(`解析JSON文件失败: ${error.message}`, 'error');
+                    log(`解析错误: ${error.message}`, 'error');
+                }
+            };
+
+            reader.readAsText(file);
+        }
+
+        function processData(coordinateField, outputType, customConfig) {
+            try {
+                let config = {};
+                if (customConfig) {
+                    config = JSON.parse(customConfig);
+                }
+
+                log(`开始转换，坐标字段: ${coordinateField}, 输出类型: ${outputType}`);
+
+                switch (outputType) {
+                    case 'geojson':
+                        exportArr = convertToGeoJSON(originalData, coordinateField);
+                        break;
+                    case 'points':
+                        exportArr = convertToPoints(originalData, coordinateField, config);
+                        break;
+                    case 'lines':
+                        exportArr = convertToLines(originalData, coordinateField);
+                        break;
+                    case 'heatmap':
+                        exportArr = convertToHeatmap(originalData, coordinateField, config);
+                        break;
+                    default:
+                        throw new Error('不支持的输出类型');
+                }
+
+                showStatus(`转换完成！共处理 ${Array.isArray(exportArr) ? exportArr.length : exportArr.features?.length || 0} 条数据`, 'success');
+                log(`转换完成，输出数据:`, 'success');
+                log(JSON.stringify(exportArr, null, 2));
+
+            } catch (error) {
+                showStatus(`转换失败: ${error.message}`, 'error');
+                log(`转换错误: ${error.message}`, 'error');
+            }
+        }
+
+        function convertToGeoJSON(data, coordinateField) {
+            let features = [];
+
+            data.forEach((item, index) => {
+                if (item[coordinateField]) {
+                    let properties = { ...item };
+                    let coordinateData = item[coordinateField];
+                    delete properties[coordinateField];
+
+                    let points = null;
+                    if (typeof coordinateData === 'string') {
+                        points = JSON.parse(coordinateData);
+                    } else {
+                        points = coordinateData;
+                    }
+
+                    let resPoints = [];
+
+                    if (points && points.length !== 0) {
+                        points = points.filter((p) => {
+                            return p.length !== 0;
+                        });
+
+                        if (Array.isArray(points[0][0][0])) {
+                            resPoints = points;
+                        } else {
+                            points.forEach((item) => {
+                                let _points = [...item, item[0]];
+                                resPoints.push(_points);
+                            });
+                            resPoints = [resPoints];
+                        }
+
+                        let feature = {
+                            type: "Feature",
+                            geometry: {
+                                type: "MultiPolygon",
+                                coordinates: resPoints,
+                            },
+                            properties: properties,
+                        };
+                        features.push(feature);
+                    }
+                }
+            });
+
+            return {
+                type: "FeatureCollection",
+                features: features,
+            };
+        }
+
+        function convertToPoints(data, coordinateField, config) {
+            let points = [];
+
+            data.forEach((item, index) => {
+                if (item[coordinateField]) {
+                    let coordinateData = item[coordinateField];
+                    let coordinates = null;
+
+                    if (typeof coordinateData === 'string') {
+                        coordinates = JSON.parse(coordinateData);
+                    } else {
+                        coordinates = coordinateData;
+                    }
+
+                    if (coordinates && coordinates.length > 0) {
+                        // 取第一个坐标点
+                        const coord = coordinates[0];
+                        if (Array.isArray(coord) && coord.length >= 2) {
+                            points.push({
+                                lat: parseFloat(coord[1]).toFixed(4),
+                                lng: parseFloat(coord[0]).toFixed(4),
+                                name: config.namePrefix ? `${config.namePrefix}${index + 1}` : `点${index + 1}`,
+                            });
+                        }
+                    }
+                }
+            });
+
+            return points;
+        }
+
+        function convertToLines(data, coordinateField) {
+            let lines = [];
+
+            data.forEach((item) => {
+                if (item[coordinateField]) {
+                    let coordinateData = item[coordinateField];
+                    let coordinates = null;
+
+                    if (typeof coordinateData === 'string') {
+                        coordinates = JSON.parse(coordinateData);
+                    } else {
+                        coordinates = coordinateData;
+                    }
+
+                    if (coordinates && coordinates.length > 0) {
+                        coordinates.forEach((coord) => {
+                            if (Array.isArray(coord) && coord.length >= 2) {
+                                lines.push({
+                                    lat: parseFloat(coord[1]).toFixed(4),
+                                    lng: parseFloat(coord[0]).toFixed(4),
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+
+            return lines;
+        }
+
+        function convertToHeatmap(data, coordinateField, config) {
+            let heatmapData = [];
+            let weights = config.weight || [];
+
+            data.forEach((item, index) => {
+                if (item[coordinateField]) {
+                    let coordinateData = item[coordinateField];
+                    let coordinates = null;
+
+                    if (typeof coordinateData === 'string') {
+                        coordinates = JSON.parse(coordinateData);
+                    } else {
+                        coordinates = coordinateData;
+                    }
+
+                    if (coordinates && coordinates.length > 0) {
+                        const coord = coordinates[0];
+                        if (Array.isArray(coord) && coord.length >= 2) {
+                            const weight = index < weights.length ? weights[index] : rnd(1, 100);
+                            heatmapData.push([
+                                parseFloat(coord[0]).toFixed(4),
+                                parseFloat(coord[1]).toFixed(4),
+                                weight,
+                            ]);
+                        }
+                    }
+                }
+            });
+
+            return heatmapData;
+        }
+
+        function exportData() {
+            if (!exportArr || (Array.isArray(exportArr) && exportArr.length === 0)) {
+                showStatus('没有可导出的数据', 'error');
+                return;
+            }
+
+            const fileName = document.getElementById('outputFileName').value || 'converted_data.json';
+
+            console.log("导出数据");
+            let blob = new Blob([JSON.stringify(exportArr, null, 2)], { type: 'application/json' });
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            link.click();
+
+            showStatus(`数据已导出为: ${fileName}`, 'success');
+            log(`数据已导出: ${fileName}`);
+        }
+
+        function rnd(min, max) {
+            return min + Math.floor(Math.random() * (max - min + 1));
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            log('通用数据转换工具已加载');
+        });
+    </script>
+</body>
+
+</html>
