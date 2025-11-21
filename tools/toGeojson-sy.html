@@ -268,7 +268,7 @@
             }
         }
 
-        function convertToGeoJSON(data, coordinateField) {
+        function convertToGeoJSON2(data, coordinateField) {
             let features = [];
 
             data.forEach((item, index) => {
@@ -299,6 +299,94 @@
                                 resPoints.push(_points);
                             });
                             resPoints = [resPoints];
+                        }
+
+                        let feature = {
+                            type: "Feature",
+                            geometry: {
+                                type: "MultiPolygon",
+                                coordinates: resPoints,
+                            },
+                            properties: properties,
+                        };
+                        features.push(feature);
+                    }
+                }
+            });
+
+            return {
+                type: "FeatureCollection",
+                features: features,
+            };
+        }
+
+        function convertToGeoJSON(data, coordinateField) {
+            let features = [];
+
+            data.forEach((item, index) => {
+                if (item[coordinateField]) {
+                    let properties = { ...item };
+                    let coordinateData = item[coordinateField];
+                    delete properties[coordinateField];
+
+                    let points = null;
+                    if (typeof coordinateData === 'string') {
+                        try {
+                            points = JSON.parse(coordinateData);
+                        } catch (e) {
+                            log(`解析第${index}条数据坐标失败: ${e.message}`, 'error');
+                            return;
+                        }
+                    } else {
+                        points = coordinateData;
+                    }
+
+                    if (points && points.length !== 0) {
+                        // 过滤空数组
+                        points = points.filter((p) => {
+                            return p.length !== 0;
+                        });
+
+                        if (points.length === 0) return;
+
+                        let resPoints = [];
+
+                        // 判断坐标结构类型
+                        if (Array.isArray(points[0][0][0])) {
+                            // 已经是正确的多层嵌套结构 [[[[x,y]]]]
+                            // 确保每个环是封闭的
+                            resPoints = points.map(polygon => {
+                                return polygon.map(ring => {
+                                    // 检查环是否封闭，如不封闭则添加首点
+                                    if (ring.length > 0 &&
+                                        (ring[0][0] !== ring[ring.length - 1][0] ||
+                                            ring[0][1] !== ring[ring.length - 1][1])) {
+                                        return [...ring, ring[0]];
+                                    }
+                                    return ring;
+                                });
+                            });
+                        } else if (Array.isArray(points[0][0])) {
+                            // 是面结构 [[[x,y]]]，需要封装并确保环封闭
+                            let processedPolygon = points.map(ring => {
+                                // 检查环是否封闭，如不封闭则添加首点
+                                if (ring.length > 0 &&
+                                    (ring[0][0] !== ring[ring.length - 1][0] ||
+                                        ring[0][1] !== ring[ring.length - 1][1])) {
+                                    return [...ring, ring[0]];
+                                }
+                                return ring;
+                            });
+                            resPoints = [processedPolygon]; // 包装成 MultiPolygon 格式
+                        } else {
+                            // 是单环结构 [[x,y]]，需要封闭并包装
+                            let ring = points;
+                            if (ring.length > 0 &&
+                                (ring[0][0] !== ring[ring.length - 1][0] ||
+                                    ring[0][1] !== ring[ring.length - 1][1])) {
+                                ring = [...ring, ring[0]];
+                            }
+                            resPoints = [[ring]]; // 包装成 MultiPolygon 格式
                         }
 
                         let feature = {
