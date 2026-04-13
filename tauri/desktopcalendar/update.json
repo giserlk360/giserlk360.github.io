@@ -1,0 +1,19 @@
+{
+"version": "0.4.0",
+"notes": "新版本更新内容：\n- 修复了一些已知问题\n- 优化了应用性能\n- 添加了新功能",
+"pub_date": "2023-12-01T12:00:00Z",
+"platforms": {
+"windows-x86_64": {
+"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVScmNrWXVqSHJ5STR5ckZWeTlGaEs2aFIwTFpGOVhmUFpwT2FmTGRiNnIzaVRPdXNoZVVva3dxUVJsK0FjbUc4Mkw3WWhHbnA1VWxzZ052S2pBVDh0NTArYldPVFE2VXdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2MDQ0NTQwCWZpbGU6RGVza3RvcENhbGVuZGFyXzAuNC4wX3g2NC1zZXR1cC5leGUKRmNUVXpkV3FtU29nNENXajdTM3IxNCtTNThOc0ZraDFjUW1MZ1BGcCs4VHFiSEZKRVBSaUVRR3hSQ2VPMDB2L2xOYzl1cVpMcU5OME1UUnZFMlJqRFE9PQo=",
+"url": "http://localhost:8066/tauri/downloads/DesktopCalendar_0.4.0_x64-setup.exe"
+},
+"darwin-x86_64": {
+"signature": "YOUR_MACOS_SIGNATURE_HERE",
+"url": "https://giserlk.top/tauri/downloads/example-tauri-app_0.2.0_x64.app.tar.gz"
+},
+"darwin-aarch64": {
+"signature": "YOUR_MACOS_ARM_SIGNATURE_HERE",
+"url": "https://giserlk.top/tauri/downloads/example-tauri-app_0.2.0_aarch64.app.tar.gz"
+}
+}
+}
