@@ -1,11 +1,11 @@
 {
-"version": "0.5.0",
+"version": "1.0.0",
 "notes": "新版本更新内容：\n- 修复了一些已知问题\n- 优化了应用性能\n- 添加了新功能",
-"pub_date": "2023-12-01T12:00:00Z",
+"pub_date": "2026-4-20T12:00:00Z",
 "platforms": {
 "windows-x86_64": {
-"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVScmNrWXVqSHJ5SS9yc1haY0NvYUVDTUw4R003VWx0RC8yZmkvWklLN0VsK3JtNFlpb3FSNDMxamx6c0hHNk5Dc1hVN1EzTktjTzNwbmtYNUJmQnl6aGdDeWlsSmt3endjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2MTU2MzAzCWZpbGU6RGVza3RvcENhbGVuZGFyXzAuNS4wX3g2NC1zZXR1cC5leGUKVmRhcDZ0ckJ5U2w1c2JGMVNocTNGSlV4UnBjazNsU3ZqNSsyTGpsdWdWcVdYRnYrVlBEWlpoTmFXeU91bHVYVlY5b3gwNUVjYllPRWV0UzdpYUdFQ1E9PQo=",
-"url": "https://giserlk.icu/tauri/desktopcalendar/download/DesktopCalendar_0.5.0_x64-setup.exe"
+"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVScmNrWXVqSHJ5STA4eDFKUjdzWmttZFlyWUZQSmNSTzFqQmVJcVR4MjRLVWxEL0NaWUFoUUc0SlRwclM3ZnBzbVc3MHVreWxvbGkreDRkZlhmOHRCMjZycEhnT2E4WWdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2Njc2MzAyCWZpbGU6RGVza3RvcENhbGVuZGFyXzEuMC4wX3g2NC1zZXR1cC5leGUKb0N0RXR2VEtFb2M2Q3hnVmVrTHVoWnFLQVdrRmpIK2l1YXRFeDFXOVI5SURlN3FNSVlBQXhjQ2FOaWpKNVJlVHhWeTNTSzRGVEhJc1RsOE00amxXQnc9PQo=",
+"url": "https://giserlk.icu/tauri/desktopcalendar/download/DesktopCalendar_1.0.0_x64-setup.exe"
 },
 "darwin-x86_64": {
 "signature": "YOUR_MACOS_SIGNATURE_HERE",
