@@ -1,11 +1,11 @@
 {
-"version": "1.0.8",
+"version": "2.0.0",
 "notes": "新版本更新内容：\n- 修复了一些已知问题\n- 优化了应用性能\n- 添加了新功能",
 "pub_date": "2023-12-01T12:00:00Z",
 "platforms": {
 "windows-x86_64": {
-"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQ3pKOUJ6WWJWc1BreGs5U2hnWmcvY3MyV2EwSEh3cUdtb0JVeWx1YVNxejl4Qjc1bHExNUV0ZWp3Y0pGV3dNR3VoNEZuL0wrUUxXSjR6OHhtUjRVTFppNk8rQlJMc1E0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2Njc2ODE0CWZpbGU6R0lTLUxLXzEuMC44X3g2NC1zZXR1cC5leGUKcUVUWEJ5Z1AySUFNOHhqR25tQXI5NllXYVgrdnFIL285N25XbUxlUVlOMlUzRFNiVlJzTFVGbWJKNzl2MkxaM1VXU0ZxaXJWUCt3aDlBMEJFVHZUQXc9PQo=",
-"url": "https://giserlk.icu/tauri/gis-lk/download/GIS-LK_1.0.8_x64-setup.exe"
+"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQ3pKOUJ6WWJWc0lqUEdENkhmZVl6SzFhZ2hldGdsVUF5L1dsMVdmVkFCZEF6anJXc3lkR2JYanhYbHk3aFVwcWYwcmNrVlA4S1duR3hMSXFaZGozdjhRVnI3NlV3SncwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2ODQ1Mjc1CWZpbGU6R0lTLUxLXzIuMC4wX3g2NC1zZXR1cC5leGUKRi82NnNWQk90VFkxWVRDbGh4VDd3cXBwcjgrVVZZak45c0k3RnhqamQvc2NRRXQ0a3VZZFZSQlBIeU9vM2ZGMExKVWVuaitIMHBwTWdRVFhvRm1VREE9PQo=",
+"url": "https://giserlk.icu/tauri/gis-lk/download/GIS-LK_2.0.0_x64-setup.exe"
 },
 "darwin-x86_64": {
 "signature": "YOUR_MACOS_SIGNATURE_HERE",
