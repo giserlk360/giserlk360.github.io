@@ -1,19 +1,20 @@
 {
-"version": "2.0.0",
-"notes": "新版本更新内容：\n- 修复了一些已知问题\n- 优化了应用性能\n- 添加了新功能",
-"pub_date": "2023-12-01T12:00:00Z",
-"platforms": {
-"windows-x86_64": {
-"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQ3pKOUJ6WWJWc0lqUEdENkhmZVl6SzFhZ2hldGdsVUF5L1dsMVdmVkFCZEF6anJXc3lkR2JYanhYbHk3aFVwcWYwcmNrVlA4S1duR3hMSXFaZGozdjhRVnI3NlV3SncwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2ODQ1Mjc1CWZpbGU6R0lTLUxLXzIuMC4wX3g2NC1zZXR1cC5leGUKRi82NnNWQk90VFkxWVRDbGh4VDd3cXBwcjgrVVZZak45c0k3RnhqamQvc2NRRXQ0a3VZZFZSQlBIeU9vM2ZGMExKVWVuaitIMHBwTWdRVFhvRm1VREE9PQo=",
-"url": "https://giserlk.icu/tauri/gis-lk/download/GIS-LK_2.0.0_x64-setup.exe"
-},
-"darwin-x86_64": {
-"signature": "YOUR_MACOS_SIGNATURE_HERE",
-"url": "https://giserlk.top/tauri/downloads/example-tauri-app_0.2.0_x64.app.tar.gz"
-},
-"darwin-aarch64": {
-"signature": "YOUR_MACOS_ARM_SIGNATURE_HERE",
-"url": "https://giserlk.top/tauri/downloads/example-tauri-app_0.2.0_aarch64.app.tar.gz"
-}
-}
-}
+    "version": "2.0.0",
+    "notes": "新版本更新内容：\n- 修复了一些已知问题\n- 优化了应用性能\n- 添加了新功能",
+    "pub_date": "2023-12-01T12:00:00Z",
+    "platforms": {
+    "windows-x86_64": {
+    "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQ3pKOUJ6WWJWc0lqUEdENkhmZVl6SzFhZ2hldGdsVUF5L1dsMVdmVkFCZEF6anJXc3lkR2JYanhYbHk3aFVwcWYwcmNrVlA4S1duR3hMSXFaZGozdjhRVnI3NlV3SncwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2ODQ1Mjc1CWZpbGU6R0lTLUxLXzIuMC4wX3g2NC1zZXR1cC5leGUKRi82NnNWQk90VFkxWVRDbGh4VDd3cXBwcjgrVVZZak45c0k3RnhqamQvc2NRRXQ0a3VZZFZSQlBIeU9vM2ZGMExKVWVuaitIMHBwTWdRVFhvRm1VREE9PQo=",
+    "url": "https://giserlk.icu/tauri/gis-lk/download/GIS-LK_2.0.0_x64-setup.exe"
+    },
+    "darwin-x86_64": {
+    "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQ3pKOUJ6WWJWc0NERW91Z0QvRkNJam9mM2w0RWYwdXpGczBsNTdYUng4eW03ZmJlUEk2dkhVR1hLc3VzMEpxYWd1UjByOHdCbnc3a0l4NU1hL3hnYS9DN0hnanFVUkFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MzY1NjI0CWZpbGU6R0lTLUxLLmFwcC50YXIuZ3oKN2xITXgraG50T04waW1VTGM5bkxkTnl6WlYrVnZTdkp4cUhZcFlCaXRaTFdFT0h5c3VYd1poOFVDTVdnRHNUM2xpYU53NDVyYVoxcGN4T2laYW8zQlE9PQo=",
+    "url": "https://giserlk.icu/tauri/gis-lk/download/GIS-LK.app.tar.gz"
+    },
+    "darwin-aarch64": {
+    "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQ3pKOUJ6WWJWc0NERW91Z0QvRkNJam9mM2w0RWYwdXpGczBsNTdYUng4eW03ZmJlUEk2dkhVR1hLc3VzMEpxYWd1UjByOHdCbnc3a0l4NU1hL3hnYS9DN0hnanFVUkFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MzY1NjI0CWZpbGU6R0lTLUxLLmFwcC50YXIuZ3oKN2xITXgraG50T04waW1VTGM5bkxkTnl6WlYrVnZTdkp4cUhZcFlCaXRaTFdFT0h5c3VYd1poOFVDTVdnRHNUM2xpYU53NDVyYVoxcGN4T2laYW8zQlE9PQo=",
+    "url": "https://giserlk.icu/tauri/gis-lk/download/GIS-LK.app.tar.gz"
+    }
+    }
+    }
+    
