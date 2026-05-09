@@ -1,5 +1,5 @@
 {
-    "version": "2.0.0",
+    "version": "2.0.1",
     "notes": "新版本更新内容：\n- 修复了一些已知问题\n- 优化了应用性能\n- 添加了新功能",
     "pub_date": "2023-12-01T12:00:00Z",
     "platforms": {
@@ -8,11 +8,11 @@
     "url": "https://giserlk.icu/tauri/gis-lk/download/GIS-LK_2.0.0_x64-setup.exe"
     },
     "darwin-x86_64": {
-    "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQ3pKOUJ6WWJWc0NERW91Z0QvRkNJam9mM2w0RWYwdXpGczBsNTdYUng4eW03ZmJlUEk2dkhVR1hLc3VzMEpxYWd1UjByOHdCbnc3a0l4NU1hL3hnYS9DN0hnanFVUkFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MzY1NjI0CWZpbGU6R0lTLUxLLmFwcC50YXIuZ3oKN2xITXgraG50T04waW1VTGM5bkxkTnl6WlYrVnZTdkp4cUhZcFlCaXRaTFdFT0h5c3VYd1poOFVDTVdnRHNUM2xpYU53NDVyYVoxcGN4T2laYW8zQlE9PQo=",
+    "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQ3pKOUJ6WWJWc0psWGoycS9XMVJybzlwKzRHSGpmTDcvMHBTWWhUVWpFMy9lK1grekk2ZVNiS3h3VlRqUlBtNzErM0VXWlo2K2FOMnp4QmdGWVJaYjJ3TG13WDlXZ2dnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc4MzE1MjI5CWZpbGU6R0lTLUxLLmFwcC50YXIuZ3oKdFFUREppTmtqNDBIU29YbzJwOExpNGxndEM3OGx5U1RkVU5TQXpseHZKL0VRTFpobEkvWXB2UjUzdUZPc1FEZVF5NUk0SjFpTlkyNmxWb2diUzNvQ1E9PQo=",
     "url": "https://giserlk.icu/tauri/gis-lk/download/GIS-LK.app.tar.gz"
     },
     "darwin-aarch64": {
-    "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQ3pKOUJ6WWJWc0NERW91Z0QvRkNJam9mM2w0RWYwdXpGczBsNTdYUng4eW03ZmJlUEk2dkhVR1hLc3VzMEpxYWd1UjByOHdCbnc3a0l4NU1hL3hnYS9DN0hnanFVUkFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MzY1NjI0CWZpbGU6R0lTLUxLLmFwcC50YXIuZ3oKN2xITXgraG50T04waW1VTGM5bkxkTnl6WlYrVnZTdkp4cUhZcFlCaXRaTFdFT0h5c3VYd1poOFVDTVdnRHNUM2xpYU53NDVyYVoxcGN4T2laYW8zQlE9PQo=",
+    "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQ3pKOUJ6WWJWc0psWGoycS9XMVJybzlwKzRHSGpmTDcvMHBTWWhUVWpFMy9lK1grekk2ZVNiS3h3VlRqUlBtNzErM0VXWlo2K2FOMnp4QmdGWVJaYjJ3TG13WDlXZ2dnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc4MzE1MjI5CWZpbGU6R0lTLUxLLmFwcC50YXIuZ3oKdFFUREppTmtqNDBIU29YbzJwOExpNGxndEM3OGx5U1RkVU5TQXpseHZKL0VRTFpobEkvWXB2UjUzdUZPc1FEZVF5NUk0SjFpTlkyNmxWb2diUzNvQ1E9PQo=",
     "url": "https://giserlk.icu/tauri/gis-lk/download/GIS-LK.app.tar.gz"
     }
     }
