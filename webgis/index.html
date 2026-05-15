@@ -1,0 +1,2843 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGIS 前端开发实战指南</title>
+    <script src="./assets/js/tailwindcss.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                        mono: ['Fira Code', 'Consolas', 'monospace'],
+                    },
+                    colors: {
+                        slate: { 850: '#151f32', 900: '#0f172a' }
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
+                        'fade-in': 'fadeIn 0.6s ease-out forwards',
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+                        'bounce-slow': 'bounceSlow 2s ease-in-out infinite',
+                        'slide-right': 'slideRight 0.8s ease-out forwards',
+                        'slide-left': 'slideLeft 0.8s ease-out forwards',
+                        'tile-cut': 'tileCut 2s ease-in-out forwards',
+                        'spin-slow': 'spin 20s linear infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(30px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 20px rgba(34,211,238,0.2)' },
+                            '50%': { boxShadow: '0 0 40px rgba(34,211,238,0.4)' },
+                        },
+                        bounceSlow: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        slideRight: {
+                            '0%': { opacity: '0', transform: 'translateX(-40px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        slideLeft: {
+                            '0%': { opacity: '0', transform: 'translateX(40px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        tileCut: {
+                            '0%': { clipPath: 'inset(0)' },
+                            '100%': { clipPath: 'inset(0)' },
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="./assets/css/style.css">
+    <link rel="stylesheet" href="../demos/leaflet/libs/leaflet@1.9.4/dist/leaflet.css">
+    <script src="../demos/leaflet/libs/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        /* ========== Scroll Animation Base ========== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-60px);
+            transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+        }
+        .reveal-left.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(60px);
+            transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+        }
+        .reveal-right.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+        }
+        .reveal-scale.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .stagger-1 { transition-delay: 0.1s; }
+        .stagger-2 { transition-delay: 0.2s; }
+        .stagger-3 { transition-delay: 0.3s; }
+        .stagger-4 { transition-delay: 0.4s; }
+        .stagger-5 { transition-delay: 0.5s; }
+        .stagger-6 { transition-delay: 0.6s; }
+
+        /* ========== Hero Particles ========== */
+        #hero-canvas {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+
+        /* ========== Progress Indicator ========== */
+        .progress-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .progress-dot.active {
+            background: #22d3ee;
+            box-shadow: 0 0 12px rgba(34,211,238,0.5);
+            transform: scale(1.3);
+        }
+        .progress-dot:hover {
+            background: rgba(34,211,238,0.5);
+        }
+
+        /* ========== Section Styles ========== */
+        .section-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 4rem 2rem;
+        }
+
+        /* ========== Glass Cards ========== */
+        .info-card {
+            background: rgba(30,41,59,0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            transition: all 0.4s ease;
+        }
+        .info-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(34,211,238,0.3);
+            box-shadow: 0 12px 40px -10px rgba(0,0,0,0.5);
+        }
+
+        /* ========== Code Block ========== */
+        .code-block {
+            background: #1a1a2e;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        .code-block .comment { color: #6a9955; }
+        .code-block .keyword { color: #c586c0; }
+        .code-block .string { color: #ce9178; }
+        .code-block .function { color: #dcdcaa; }
+        .code-block .number { color: #b5cea8; }
+        .code-block .property { color: #9cdcfe; }
+        .code-block .tag { color: #569cd6; }
+        .code-block .attr { color: #92d1a3; }
+
+        /* ========== Tile Animation ========== */
+        .tile-demo-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 2px;
+            width: 320px; height: 320px;
+            position: relative;
+        }
+        .tile-cell {
+            background-color: #1e3a5f;
+            background-size: cover;
+            border-radius: 3px;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.4s ease;
+        }
+        .tile-cell.loaded {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .tile-cell::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+        .tile-cell.loading {
+            opacity: 0.5;
+            transform: scale(0.9);
+            background-color: #1e293b;
+            background-image: none !important;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        /* ========== Pyramid ========== */
+        .pyramid-level {
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            transition: all 0.5s ease;
+        }
+
+        /* ========== Coordinate Dot Animation ========== */
+        .coord-dot {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            position: absolute;
+            transition: all 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* ========== Step Indicator ========== */
+        .step-btn {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .step-btn.active {
+            background: rgba(34,211,238,0.15);
+            border-color: rgba(34,211,238,0.5);
+            color: #22d3ee;
+        }
+        .step-btn.completed {
+            background: rgba(16,185,129,0.15);
+            border-color: rgba(16,185,129,0.5);
+            color: #10b981;
+        }
+        .step-btn .step-num {
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700;
+            border: 2px solid currentColor;
+            transition: all 0.3s;
+        }
+
+
+        /* ========== Glow Text ========== */
+        .glow-text {
+            background: linear-gradient(135deg, #22d3ee, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ========== Feature Grid Icon ========== */
+        .feature-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+
+        /* ========== Scroll Down Indicator ========== */
+        .scroll-indicator {
+            animation: bounceSlow 2s ease-in-out infinite;
+        }
+        @keyframes bounceSlow {
+            0%, 100% { transform: translateY(0); opacity: 1; }
+            50% { transform: translateY(12px); opacity: 0.5; }
+        }
+
+        /* ========== Radar Scan for Demo ========== */
+        .radar-scan-demo {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+        }
+        .radar-sweep {
+            position: absolute;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent 0%, rgba(34,211,238,0.3) 100%);
+            animation: radarSpin 3s linear infinite;
+        }
+        @keyframes radarSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* ========== Live Demo Section ========== */
+        #live-map {
+            border-radius: 12px;
+        }
+        .leaflet-control-zoom { display: none !important; }
+        .leaflet-control-attribution { display: none !important; }
+        /* ========== Lightbox ========== */
+        .slide-thumb {
+            cursor: pointer;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .slide-thumb:hover {
+            border-color: rgba(34,211,238,0.3);
+            box-shadow: 0 8px 30px -10px rgba(0,0,0,0.5);
+        }
+        .slide-thumb img {
+            width: 100%;
+            display: block;
+        }
+        .slide-thumb .slide-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 8px 12px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+        }
+        #lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+        }
+        #lightbox.active { display: flex; }
+        #lightbox img {
+            max-width: 92vw;
+            max-height: 92vh;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        /* SVG Modal */
+        #svg-modal {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.88); backdrop-filter: blur(12px);
+            display: none; align-items: center; justify-content: center; flex-direction: column;
+            cursor: zoom-out;
+        }
+        #svg-modal.active { display: flex; }
+        #svg-modal .modal-title {
+            color: rgba(255,255,255,0.65); font-size: 14px; margin-bottom: 20px;
+            letter-spacing: 3px; text-transform: uppercase;
+        }
+        #svg-modal .modal-phases {
+            display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap; justify-content: center;
+        }
+        #svg-modal .modal-phase {
+            color: rgba(255,255,255,0.35); font-size: 11px;
+            display: flex; align-items: center; gap: 6px;
+            transition: color 0.4s;
+        }
+        #svg-modal .modal-phase .dot {
+            width: 6px; height: 6px; border-radius: 50%;
+        }
+        #svg-modal .modal-hint {
+            color: rgba(255,255,255,0.2); font-size: 11px; margin-top: 16px;
+        }
+        .svg-zoomable { cursor: zoom-in; transition: transform 0.2s ease; }
+        .svg-zoomable:hover { transform: scale(1.04); }
+
+        /* GIS Server URL Modal */
+        #gis-url-modal {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+            display: none; align-items: center; justify-content: center;
+            cursor: default;
+        }
+        #gis-url-modal.active { display: flex; }
+        #gis-url-modal .modal-box {
+            background: linear-gradient(135deg, rgba(15,23,42,0.98), rgba(30,41,59,0.98));
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 32px;
+            max-width: 680px; width: 90vw; max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            cursor: default;
+        }
+        #gis-url-modal .modal-box::-webkit-scrollbar { width: 4px; }
+        #gis-url-modal .modal-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+        #gis-url-modal .modal-header {
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+        }
+        #gis-url-modal .modal-header h3 { font-size: 1.25rem; font-weight: 700; }
+        #gis-url-modal .modal-close {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.5); font-size: 18px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        #gis-url-modal .modal-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        #gis-url-modal .url-group { margin-bottom: 16px; }
+        #gis-url-modal .url-group:last-child { margin-bottom: 0; }
+        #gis-url-modal .url-label {
+            font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+            margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+        }
+        #gis-url-modal .url-label .badge {
+            font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 500;
+        }
+        #gis-url-modal .url-code {
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px; padding: 10px 14px; font-family: 'Courier New', monospace;
+            font-size: 12px; color: rgba(255,255,255,0.75); line-height: 1.6;
+            word-break: break-all; white-space: pre-wrap; position: relative;
+        }
+        #gis-url-modal .url-note {
+            font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 4px; padding-left: 2px;
+        }
+        #gis-url-modal .url-highlight { color: #fbbf24; }
+        .gis-server-card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .gis-server-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+        .click-hint {
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+            margin-top: 12px; font-size: 11px; color: rgba(255,255,255,0.25);
+            transition: color 0.2s;
+        }
+        .gis-server-card:hover .click-hint { color: rgba(255,255,255,0.5); }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 selection:bg-cyan-500/30 selection:text-cyan-200">
+
+    <!-- ==================== Fixed Progress Sidebar ==================== -->
+    <nav id="progress-nav" class="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 items-center hidden md:flex">
+        <div class="progress-dot active" data-section="0" title="封面"></div>
+        <div class="progress-dot" data-section="1" title="什么是WebGIS"></div>
+        <div class="progress-dot" data-section="2" title="坐标系与投影"></div>
+        <div class="progress-dot" data-section="3" title="瓦片服务"></div>
+        <div class="progress-dot" data-section="4" title="数据格式"></div>
+        <div class="progress-dot" data-section="5" title="二维框架"></div>
+        <div class="progress-dot" data-section="6" title="三维框架"></div>
+        <div class="progress-dot" data-section="7" title="国产地图"></div>
+        <div class="progress-dot" data-section="8" title="GIS服务器"></div>
+        <div class="progress-dot" data-section="9" title="实战演示"></div>
+        <div class="progress-dot" data-section="10" title="选型指南"></div>
+        <div class="progress-dot" data-section="11" title="开发注意事项"></div>
+        <div class="progress-dot" data-section="12" title="前沿趋势"></div>
+    </nav>
+
+    <!-- ==================== Section 0: Hero ==================== -->
+    <section class="section-container relative overflow-hidden" data-section="0">
+        <canvas id="hero-canvas"></canvas>
+        <!-- Decorative blobs -->
+        <div class="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-cyan-500/5 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-violet-500/5 rounded-full blur-[120px]"></div>
+
+        <div class="relative z-10 text-center max-w-4xl mx-auto">
+            <div class="mb-6 reveal">
+                <span class="inline-block px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    WebGIS 前端开发培训
+                </span>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-display font-bold mb-6 reveal stagger-1">
+                <span class="text-white">Web</span><span class="glow-text">GIS</span>
+                <br>
+                <span class="text-3xl md:text-4xl font-normal text-slate-300">前端开发实战指南</span>
+            </h1>
+            <div class="flex items-center justify-center gap-4 mt-8 mb-12 reveal stagger-3">
+                <div class="w-14 h-14 rounded-full bg-cyan-500/15 flex items-center justify-center text-cyan-400 font-bold text-xl">李</div>
+                <div class="text-left">
+                    <div class="text-white font-semibold text-lg">李康</div>
+                    <div class="text-slate-500 text-sm">GIS工程师 · 深耕GIS十余年</div>
+                </div>
+            </div>
+            <div class="scroll-indicator reveal stagger-4">
+                <svg class="w-8 h-8 mx-auto text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                </svg>
+                <p class="text-xs text-slate-600 mt-2">向下滚动开始</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== Section 1: What is WebGIS ==================== -->
+    <section class="section-container" data-section="1">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    什么是 <span class="glow-text">WebGIS</span> ?
+                </h2>
+                <p class="text-slate-400 text-lg reveal stagger-1">WebGIS = Web 技术 + GIS 数据 + 前端渲染</p>
+            </div>
+
+            <!-- Data Flow Diagram -->
+            <div class="reveal stagger-2">
+                <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-2 mb-16">
+                    <!-- GIS Server -->
+                    <div class="info-card p-5 text-center w-full md:w-44">
+                        <div class="text-3xl mb-2">
+                            <svg class="w-10 h-10 mx-auto text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-white text-sm">GIS 数据服务器</h3>
+                        <p class="text-xs text-slate-500 mt-1">PostGIS / GeoServer<br>ArcGIS Server</p>
+                    </div>
+                    <svg class="w-8 h-8 text-cyan-500/50 shrink-0 rotate-90 md:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                    <!-- Map Service -->
+                    <div class="info-card p-5 text-center w-full md:w-44">
+                        <div class="text-3xl mb-2">
+                            <svg class="w-10 h-10 mx-auto text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-white text-sm">地图服务</h3>
+                        <p class="text-xs text-slate-500 mt-1">WMS / WMTS / WFS<br>REST API</p>
+                    </div>
+                    <svg class="w-8 h-8 text-cyan-500/50 shrink-0 rotate-90 md:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                    <!-- Frontend -->
+                    <div class="info-card p-5 text-center w-full md:w-44 border-cyan-500/30 animate-pulse-glow">
+                        <div class="text-3xl mb-2">
+                            <svg class="w-10 h-10 mx-auto text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-cyan-400 text-sm">前端渲染</h3>
+                        <p class="text-xs text-slate-500 mt-1">Leaflet / Cesium<br>Mapbox / 高德</p>
+                    </div>
+                    <svg class="w-8 h-8 text-cyan-500/50 shrink-0 rotate-90 md:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                    <!-- User -->
+                    <div class="info-card p-5 text-center w-full md:w-44">
+                        <div class="text-3xl mb-2">
+                            <svg class="w-10 h-10 mx-auto text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-white text-sm">用户交互</h3>
+                        <p class="text-xs text-slate-500 mt-1">浏览 / 查询<br>分析 / 编辑</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Concepts Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="info-card p-5 reveal stagger-1">
+                    <div class="feature-icon bg-cyan-500/10 text-cyan-400 mb-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                    </div>
+                    <h4 class="font-semibold text-white text-sm mb-1">地图渲染</h4>
+                    <p class="text-xs text-slate-500">将空间数据可视化为地图</p>
+                </div>
+                <div class="info-card p-5 reveal stagger-2">
+                    <div class="feature-icon bg-violet-500/10 text-violet-400 mb-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+                    <h4 class="font-semibold text-white text-sm mb-1">空间分析</h4>
+                    <p class="text-xs text-slate-500">缓冲区/叠加/路径分析</p>
+                </div>
+                <div class="info-card p-5 reveal stagger-3">
+                    <div class="feature-icon bg-amber-500/10 text-amber-400 mb-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    </div>
+                    <h4 class="font-semibold text-white text-sm mb-1">数据交互</h4>
+                    <p class="text-xs text-slate-500">编辑/上传/下载 GIS 数据</p>
+                </div>
+                <div class="info-card p-5 reveal stagger-4">
+                    <div class="feature-icon bg-emerald-500/10 text-emerald-400 mb-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <h4 class="font-semibold text-white text-sm mb-1">实时监控</h4>
+                    <p class="text-xs text-slate-500">车辆/设备/事件实时追踪</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="section-container" data-section="2">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    坐标系与<span class="glow-text">投影</span>
+                </h2>
+                <p class="text-slate-400 reveal stagger-1">地球是圆的，屏幕是平的 —— 坐标系是 WebGIS 的第一课</p>
+            </div>
+
+            <!-- Coordinate System Cards -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+                <div class="info-card p-6 reveal stagger-1">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                            <span class="text-blue-400 font-bold text-sm">WGS</span>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white">WGS-84</h3>
+                            <p class="text-xs text-slate-500">GPS 标准坐标系</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-start gap-2">
+                            <span class="text-cyan-400 mt-0.5">&#9679;</span>
+                            <span>国际通用，GPS 设备原始坐标</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-cyan-400 mt-0.5">&#9679;</span>
+                            <span>Google Earth / OSM 使用</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-cyan-400 mt-0.5">&#9679;</span>
+                            <span>EPSG:4326 (经纬度)</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
+                        <code class="text-xs text-blue-300 font-mono">北京: 116.397, 39.908</code>
+                    </div>
+                </div>
+
+                <div class="info-card p-6 reveal stagger-2">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                            <span class="text-emerald-400 font-bold text-xs">GCJ</span>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white">GCJ-02</h3>
+                            <p class="text-xs text-slate-500">国测局坐标系 (火星坐标)</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-start gap-2">
+                            <span class="text-emerald-400 mt-0.5">&#9679;</span>
+                            <span>中国法规要求使用的加密坐标</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-emerald-400 mt-0.5">&#9679;</span>
+                            <span>高德地图 / 腾讯地图 / Google 中国</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-emerald-400 mt-0.5">&#9679;</span>
+                            <span>在 WGS84 基础上加偏移</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                        <code class="text-xs text-emerald-300 font-mono">北京: 116.404, 39.915</code>
+                    </div>
+                </div>
+
+                <div class="info-card p-6 reveal stagger-4">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center">
+                            <span class="text-rose-400 font-bold text-xs">BD</span>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white">BD-09</h3>
+                            <p class="text-xs text-slate-500">百度坐标系</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-start gap-2">
+                            <span class="text-rose-400 mt-0.5">&#9679;</span>
+                            <span>百度在 GCJ-02 上再次加密</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-rose-400 mt-0.5">&#9679;</span>
+                            <span>仅百度地图使用</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-rose-400 mt-0.5">&#9679;</span>
+                            <span>偏移量最大，与其他系不兼容</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-rose-500/5 border border-rose-500/10">
+                        <code class="text-xs text-rose-300 font-mono">北京: 116.410, 39.918</code>
+                    </div>
+                </div>
+
+                <div class="info-card p-6 reveal stagger-3">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                            <span class="text-amber-400 font-bold text-xs">CGCS</span>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white">CGCS2000</h3>
+                            <p class="text-xs text-slate-500">2000 国家大地坐标系</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-start gap-2">
+                            <span class="text-amber-400 mt-0.5">&#9679;</span>
+                            <span>中国法定国家大地坐标系</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-amber-400 mt-0.5">&#9679;</span>
+                            <span>2008 年起正式启用，替代北京 54 / 西安 80</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-amber-400 mt-0.5">&#9679;</span>
+                            <span>EPSG:4490，椭球与 WGS84 极为接近</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="text-amber-400 mt-0.5">&#9679;</span>
+                            <span>自然资源/国土测绘等领域强制使用</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                        <code class="text-xs text-amber-300 font-mono">北京: 116.397, 39.908</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coordinate Offset Visualization -->
+            <div class="reveal stagger-5">
+                <div class="info-card p-6 md:p-8">
+                    <h3 class="font-display font-bold text-white mb-2">同一地点，三种坐标 —— 偏移可视化</h3>
+                    <p class="text-sm text-slate-500 mb-6">天安门广场在不同坐标系下的位置差异（放大展示）</p>
+                    <div class="relative w-full h-64 md:h-80 flex items-center justify-center">
+                        <!-- Coordinate Grid SVG -->
+                        <svg class="absolute inset-0 w-full h-full" viewBox="0 0 600 300">
+                            <!-- Grid lines -->
+                            <defs>
+                                <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                                    <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
+                                </pattern>
+                            </defs>
+                            <rect width="600" height="300" fill="url(#grid)"/>
+                            <!-- Crosshair -->
+                            <line x1="250" y1="0" x2="250" y2="300" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4"/>
+                            <line x1="0" y1="150" x2="600" y2="150" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4"/>
+                            <!-- WGS84 (center) -->
+                            <circle class="coord-dot-wgs" cx="300" cy="150" r="20" fill="rgba(59,130,246,0.15)" stroke="#3b82f6" stroke-width="2">
+                                <animate attributeName="r" values="18;22;18" dur="2s" repeatCount="indefinite"/>
+                            </circle>
+                            <circle cx="300" cy="150" r="5" fill="#3b82f6"/>
+                            <text x="300" y="130" text-anchor="middle" fill="#3b82f6" font-size="12" font-weight="bold">WGS-84</text>
+                            <!-- GCJ02 (offset) -->
+                            <circle cx="340" cy="130" r="20" fill="rgba(16,185,129,0.15)" stroke="#10b981" stroke-width="2">
+                                <animate attributeName="r" values="18;22;18" dur="2s" repeatCount="indefinite" begin="0.3s"/>
+                            </circle>
+                            <circle cx="340" cy="130" r="5" fill="#10b981"/>
+                            <text x="340" y="110" text-anchor="middle" fill="#10b981" font-size="12" font-weight="bold">GCJ-02</text>
+                            <!-- BD09 (more offset) -->
+                            <circle cx="375" cy="110" r="20" fill="rgba(244,63,94,0.15)" stroke="#f43f5e" stroke-width="2">
+                                <animate attributeName="r" values="18;22;18" dur="2s" repeatCount="indefinite" begin="0.6s"/>
+                            </circle>
+                            <circle cx="375" cy="110" r="5" fill="#f43f5e"/>
+                            <text x="375" y="90" text-anchor="middle" fill="#f43f5e" font-size="12" font-weight="bold">BD-09</text>
+                            <!-- Offset arrows -->
+                            <line x1="310" y1="145" x2="330" y2="135" stroke="#475569" stroke-width="1" marker-end="url(#arrowhead)"/>
+                            <line x1="350" y1="125" x2="365" y2="115" stroke="#475569" stroke-width="1" marker-end="url(#arrowhead)"/>
+                            <defs>
+                                <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
+                                    <polygon points="0 0, 6 2, 0 4" fill="#475569"/>
+                                </marker>
+                            </defs>
+                        </svg>
+                    </div>
+                    <div class="flex flex-wrap gap-4 mt-4 justify-center text-xs">
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500"></span> WGS-84 (真实位置)</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> GCJ-02 (偏移 ~500m)</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500"></span> BD-09 (偏移 ~1km)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projection comparison -->
+            <div class="grid md:grid-cols-2 gap-6 mt-8">
+                <div class="info-card p-6 reveal stagger-5">
+                    <h3 class="font-display font-bold text-white mb-3">EPSG:4326 (经纬度)</h3>
+                    <p class="text-sm text-slate-400 mb-3">等经纬度投影，直接使用经度/纬度，单位：度</p>
+                    <div class="code-block p-4 text-xs">
+                        <span class="comment">// Leaflet 中使用</span><br>
+                        <span class="keyword">const</span> map = L.<span class="function">map</span>(<span class="string">'map'</span>, {<br>
+                        &nbsp;&nbsp;crs: L.CRS.<span class="property">EPSG4326</span><br>
+                        });
+                    </div>
+                </div>
+                <div class="info-card p-6 reveal stagger-6">
+                    <h3 class="font-display font-bold text-white mb-3">EPSG:3857 (球面墨卡托)</h3>
+                    <p class="text-sm text-slate-400 mb-3">Web Mercator 投影，单位：米，大多数瓦片服务的标准</p>
+                    <div class="code-block p-4 text-xs">
+                        <span class="comment">// Leaflet 默认</span><br>
+                        <span class="keyword">const</span> map = L.<span class="function">map</span>(<span class="string">'map'</span>);<br>
+                        <span class="comment">// crs 默认为 EPSG3857</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="section-container" data-section="3">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    地图<span class="glow-text">瓦片服务</span>
+                </h2>
+                <p class="text-slate-400 reveal stagger-1">整张地图太大？切切成小块，按需加载 —— 这就是瓦片</p>
+            </div>
+
+            <!-- Tile Cutting Animation -->
+            <div class="grid md:grid-cols-2 gap-8 items-center mb-16">
+                <div class="reveal-left">
+                    <h3 class="font-display font-bold text-white text-xl mb-4">瓦片是怎么工作的？</h3>
+                    <div class="space-y-3 text-sm text-slate-400">
+                        <div class="flex items-start gap-3">
+                            <span class="shrink-0 w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold">1</span>
+                            <span>整张地图被预先切割成 <strong class="text-white">256 x 256</strong> 像素的小图（瓦片）</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="shrink-0 w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold">2</span>
+                            <span>每一级缩放（zoom level）的瓦片数量是上一级的 <strong class="text-white">4 倍</strong></span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="shrink-0 w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold">3</span>
+                            <span>浏览器只加载当前视口内的瓦片，<strong class="text-white">按需请求</strong></span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="shrink-0 w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold">4</span>
+                            <span>通过行列号（x, y）和缩放级别（z）定位每个瓦片</span>
+                        </div>
+                    </div>
+                    <button id="tile-play-btn" class="mt-6 px-4 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-sm hover:bg-cyan-500/20 transition-colors">
+                        &#9654; 播放瓦片加载动画
+                    </button>
+                </div>
+                <div class="reveal-right flex justify-center">
+                    <div class="relative w-80 h-80 rounded-xl overflow-hidden shadow-2xl border border-white/10">
+                        <!-- Full map (before cutting) -->
+                        <div id="tile-full-map" class="absolute inset-0 rounded-xl flex items-center justify-center transition-opacity duration-500" style="background: url('imgs/tiles/map.png') center/cover no-repeat;">
+                        </div>
+                        <!-- Tile grid (after cutting) -->
+                        <div id="tile-grid" class="tile-demo-grid absolute inset-0 rounded-xl overflow-hidden" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tile Pyramid -->
+            <div class="reveal stagger-2">
+                <div class="info-card p-6 md:p-8">
+                    <h3 class="font-display font-bold text-white mb-6 text-center">瓦片金字塔 (Tile Pyramid)</h3>
+                    <p class="text-center text-sm text-slate-500 mb-8">缩放级别越大，瓦片越多，细节越丰富</p>
+                    <div class="flex flex-col items-center gap-3" id="pyramid-container">
+                        <div class="text-center">
+                            <div class="pyramid-level"><div class="w-8 h-8 rounded bg-cyan-500/30 border border-cyan-500/40 flex items-center justify-center text-[10px] text-cyan-300 font-bold">z0</div></div>
+                            <span class="text-[10px] text-slate-600 mt-1">1 tile</span>
+                        </div>
+                        <div class="text-center">
+                            <div class="pyramid-level"><div class="w-8 h-8 rounded bg-cyan-500/25 border border-cyan-500/35 flex items-center justify-center text-[10px] text-cyan-300 font-bold">z1</div><div class="w-8 h-8 rounded bg-cyan-500/25 border border-cyan-500/35 flex items-center justify-center text-[10px] text-cyan-300 font-bold">z1</div><div class="w-8 h-8 rounded bg-cyan-500/25 border border-cyan-500/35 flex items-center justify-center text-[10px] text-cyan-300 font-bold">z1</div><div class="w-8 h-8 rounded bg-cyan-500/25 border border-cyan-500/35 flex items-center justify-center text-[10px] text-cyan-300 font-bold">z1</div></div>
+                            <span class="text-[10px] text-slate-600 mt-1">4 tiles</span>
+                        </div>
+                        <div class="text-center">
+                            <div class="pyramid-level"><div class="w-6 h-6 rounded bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-[8px] text-violet-300 font-bold">z2</div><div class="w-6 h-6 rounded bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-[8px] text-violet-300 font-bold">z2</div><div class="w-6 h-6 rounded bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-[8px] text-violet-300 font-bold">z2</div><div class="w-6 h-6 rounded bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-[8px] text-violet-300 font-bold">z2</div><div class="w-6 h-6 rounded bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-[8px] text-violet-300 font-bold">z2</div><div class="w-6 h-6 rounded bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-[8px] text-violet-300 font-bold">z2</div><div class="w-6 h-6 rounded bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-[8px] text-violet-300 font-bold">z2</div><div class="w-6 h-6 rounded bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-[8px] text-violet-300 font-bold">z2</div><div class="w-6 h-6 rounded bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-[8px] text-violet-300 font-bold">z2</div></div>
+                            <span class="text-[10px] text-slate-600 mt-1">16 tiles</span>
+                        </div>
+                        <div class="text-center">
+                            <div class="pyramid-level gap-1"><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div><div class="w-4 h-4 rounded bg-pink-500/20 border border-pink-500/30"></div></div>
+                            <span class="text-[10px] text-slate-600 mt-1">64 tiles</span>
+                        </div>
+                        <div class="text-center text-xs text-slate-500 mt-2">
+                            z18 = <span class="text-cyan-400 font-bold">68,719,476,736</span> tiles
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Types Comparison -->
+            <div class="grid md:grid-cols-2 gap-6 mt-8">
+                <div class="info-card p-6 reveal stagger-3">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">推荐</span>
+                        <h3 class="font-bold text-white">XYZ / TMS</h3>
+                    </div>
+                    <p class="text-sm text-slate-400 mb-3">最简单的瓦片服务，直接通过 URL 模板请求</p>
+                    <div class="code-block p-3 text-xs">
+                        <span class="comment">// 天地图瓦片</span><br>
+                        <span class="string">https://t{s}.tianditu.gov.cn/<br>&amp;nbsp;&amp;nbsp;DataServer?T=img_c<br>&amp;nbsp;&amp;nbsp;&amp;x={x}&amp;y={y}&amp;l={z}&amp;tk=xxx</span>
+                    </div>
+                </div>
+                <div class="info-card p-6 reveal stagger-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-violet-500/10 text-violet-400 border border-violet-500/20">OGC 标准</span>
+                        <h3 class="font-bold text-white">WMS / WMTS</h3>
+                    </div>
+                    <p class="text-sm text-slate-400 mb-3">OGC 标准服务，WMS 动态出图，WMTS 预切瓦片</p>
+                    <div class="code-block p-3 text-xs">
+                        <span class="comment">// WMS GetMap</span><br>
+                        <span class="string">?SERVICE=WMS&amp;VERSION=1.1.1<br>&amp;REQUEST=GetMap&amp;LAYERS=xxx<br>&amp;BBOX=...&amp;WIDTH=256&amp;HEIGHT=256</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="section-container" data-section="4">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    常用<span class="glow-text">数据格式</span>
+                </h2>
+                <p class="text-slate-400 reveal stagger-1">空间数据的载体 —— 前端需要了解的核心格式</p>
+            </div>
+
+            <!-- Format Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-12">
+                <div class="info-card p-5 text-center reveal stagger-1">
+                    <div class="text-2xl mb-2">{ }</div>
+                    <h4 class="font-bold text-white text-sm mb-1">GeoJSON</h4>
+                    <p class="text-[11px] text-slate-500">最通用，支持点/线/面</p>
+                    <div class="mt-2 text-[10px] text-cyan-400">&#9733; 前端首选</div>
+                </div>
+                <div class="info-card p-5 text-center reveal stagger-2">
+                    <div class="text-2xl mb-2">&#9651;</div>
+                    <h4 class="font-bold text-white text-sm mb-1">TopoJSON</h4>
+                    <p class="text-[11px] text-slate-500">GeoJSON 压缩版，更小</p>
+                    <div class="mt-2 text-[10px] text-emerald-400">体积小 80%</div>
+                </div>
+                <div class="info-card p-5 text-center reveal stagger-3">
+                    <div class="text-2xl mb-2">&#9638;</div>
+                    <h4 class="font-bold text-white text-sm mb-1">MVT</h4>
+                    <p class="text-[11px] text-slate-500">矢量瓦片，按需渲染</p>
+                    <div class="mt-2 text-[10px] text-violet-400">Mapbox 标准</div>
+                </div>
+                <div class="info-card p-5 text-center reveal stagger-4">
+                    <div class="text-2xl mb-2">&#9650;</div>
+                    <h4 class="font-bold text-white text-sm mb-1">3D Tiles</h4>
+                    <p class="text-[11px] text-slate-500">三维模型数据格式</p>
+                    <div class="mt-2 text-[10px] text-amber-400">Cesium 标准</div>
+                </div>
+                <div class="info-card p-5 text-center reveal stagger-5">
+                    <div class="text-2xl mb-2">&#9672;</div>
+                    <h4 class="font-bold text-white text-sm mb-1">KML</h4>
+                    <p class="text-[11px] text-slate-500">Google Earth 格式</p>
+                    <div class="mt-2 text-[10px] text-slate-400">XML-based</div>
+                </div>
+            </div>
+
+            <!-- GeoJSON Structure -->
+            <div class="reveal stagger-3">
+                <div class="info-card p-6 md:p-8">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="px-2 py-0.5 rounded text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">最常用</span>
+                        <h3 class="font-display font-bold text-white">GeoJSON 结构示例</h3>
+                    </div>
+                    <div class="code-block p-5 text-sm leading-relaxed overflow-x-auto">
+<pre class="m-0"><span class="tag">{</span>
+  <span class="property">"type"</span>: <span class="string">"FeatureCollection"</span>,
+  <span class="property">"features"</span>: [
+    {
+      <span class="property">"type"</span>: <span class="string">"Feature"</span>,
+      <span class="property">"geometry"</span>: {
+        <span class="property">"type"</span>: <span class="string">"Polygon"</span>,        <span class="comment">// &#9632; 面状数据</span>
+        <span class="property">"coordinates"</span>: [[[<span class="number">116.0</span>, <span class="number">39.0</span>], [<span class="number">117.0</span>, <span class="number">39.0</span>],
+                           [<span class="number">117.0</span>, <span class="number">40.0</span>], [<span class="number">116.0</span>, <span class="number">40.0</span>], [<span class="number">116.0</span>, <span class="number">39.0</span>]]]
+      },
+      <span class="property">"properties"</span>: {
+        <span class="property">"name"</span>: <span class="string">"北京市"</span>,
+        <span class="property">"population"</span>: <span class="number">2189</span>
+      }
+    },
+    {
+      <span class="property">"type"</span>: <span class="string">"Feature"</span>,
+      <span class="property">"geometry"</span>: {
+        <span class="property">"type"</span>: <span class="string">"Point"</span>,          <span class="comment">// &#9679; 点状数据</span>
+        <span class="property">"coordinates"</span>: [<span class="number">116.407</span>, <span class="number">39.904</span>]
+      },
+      <span class="property">"properties"</span>: { <span class="property">"name"</span>: <span class="string">"天安门"</span> }
+    }
+  ]
+<span class="tag">}</span></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== Section 5: 2D Frameworks ==================== -->
+    <section class="section-container" data-section="5">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    二维地图<span class="glow-text">框架</span>
+                </h2>
+                <p class="text-slate-400 reveal stagger-1">Leaflet vs OpenLayers —— 轻量 vs 功能全面</p>
+            </div>
+
+            <!-- Framework Comparison -->
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                <!-- Leaflet -->
+                <div class="info-card p-6 md:p-8 reveal-left">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                            <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#10b981" opacity="0.2"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" fill="#10b981"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-bold text-xl text-white">Leaflet</h3>
+                            <p class="text-sm text-emerald-400">轻量、简洁、插件丰富</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-5 text-sm">
+                        <div class="p-2 rounded bg-slate-800/50">
+                            <span class="text-slate-500 text-xs">体积</span>
+                            <div class="text-white font-bold">~40KB</div>
+                        </div>
+                        <div class="p-2 rounded bg-slate-800/50">
+                            <span class="text-slate-500 text-xs">学习曲线</span>
+                            <div class="text-emerald-400 font-bold">&#9733;&#9733; 简单</div>
+                        </div>
+                        <div class="p-2 rounded bg-slate-800/50">
+                            <span class="text-slate-500 text-xs">插件数</span>
+                            <div class="text-white font-bold">800+</div>
+                        </div>
+                        <div class="p-2 rounded bg-slate-800/50">
+                            <span class="text-slate-500 text-xs">GitHub</span>
+                            <div class="text-white font-bold">40k+ &#9733;</div>
+                        </div>
+                    </div>
+                    <div class="code-block p-4 text-xs">
+                        <span class="keyword">const</span> map = L.<span class="function">map</span>(<span class="string">'map'</span>)<br>
+                        &nbsp;&nbsp;.<span class="function">setView</span>([<span class="number">39.9</span>, <span class="number">116.4</span>], <span class="number">12</span>);<br><br>
+                        L.<span class="function">tileLayer</span>(<span class="string">'url/{z}/{x}/{y}'</span>)<br>
+                        &nbsp;&nbsp;.<span class="function">addTo</span>(map);
+                    </div>
+                    <div class="mt-4 flex flex-wrap gap-1.5">
+                        <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400">适合入门</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400">移动端友好</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400">插件生态好</span>
+                    </div>
+                </div>
+
+                <!-- OpenLayers -->
+                <div class="info-card p-6 md:p-8 reveal-right">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                            <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#3b82f6" stroke-width="2" fill="rgba(59,130,246,0.1)"/><path d="M12 3v18M3 12h18" stroke="#3b82f6" stroke-width="1" opacity="0.3"/><circle cx="12" cy="12" r="4" fill="#3b82f6" opacity="0.5"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-bold text-xl text-white">OpenLayers</h3>
+                            <p class="text-sm text-blue-400">功能全面、标准支持好</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-5 text-sm">
+                        <div class="p-2 rounded bg-slate-800/50">
+                            <span class="text-slate-500 text-xs">体积</span>
+                            <div class="text-white font-bold">~200KB+</div>
+                        </div>
+                        <div class="p-2 rounded bg-slate-800/50">
+                            <span class="text-slate-500 text-xs">学习曲线</span>
+                            <div class="text-amber-400 font-bold">&#9733;&#9733;&#9733; 中等</div>
+                        </div>
+                        <div class="p-2 rounded bg-slate-800/50">
+                            <span class="text-slate-500 text-xs">OGC 标准</span>
+                            <div class="text-white font-bold">全面支持</div>
+                        </div>
+                        <div class="p-2 rounded bg-slate-800/50">
+                            <span class="text-slate-500 text-xs">投影支持</span>
+                            <div class="text-white font-bold">任意投影</div>
+                        </div>
+                    </div>
+                    <div class="code-block p-4 text-xs">
+                        <span class="keyword">const</span> map = <span class="keyword">new</span> ol.<span class="function">Map</span>({<br>
+                        &nbsp;&nbsp;<span class="property">target</span>: <span class="string">'map'</span>,<br>
+                        &nbsp;&nbsp;<span class="property">view</span>: <span class="keyword">new</span> ol.<span class="function">View</span>({<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="property">center</span>: ol.<span class="function">fromLonLat</span>([<span class="number">116.4</span>, <span class="number">39.9</span>]),<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="property">zoom</span>: <span class="number">12</span><br>
+                        &nbsp;&nbsp;})<br>
+                        });
+                    </div>
+                    <div class="mt-4 flex flex-wrap gap-1.5">
+                        <span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400">企业级</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400">OGC标准</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400">高级投影</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Comparison Table -->
+            <div class="reveal stagger-3">
+                <div class="info-card overflow-hidden">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-white/5">
+                                <th class="p-4 text-left text-slate-500 font-medium">特性</th>
+                                <th class="p-4 text-center text-emerald-400 font-medium">Leaflet</th>
+                                <th class="p-4 text-center text-blue-400 font-medium">OpenLayers</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-slate-300">
+                            <tr class="border-b border-white/5">
+                                <td class="p-3 text-slate-400">上手难度</td>
+                                <td class="p-3 text-center text-emerald-400">&#9733;&#9733;&#9733;&#9733;&#9733;</td>
+                                <td class="p-3 text-center text-blue-400">&#9733;&#9733;&#9733;</td>
+                            </tr>
+                            <tr class="border-b border-white/5">
+                                <td class="p-3 text-slate-400">性能</td>
+                                <td class="p-3 text-center text-emerald-400">优秀</td>
+                                <td class="p-3 text-center text-blue-400">良好</td>
+                            </tr>
+                            <tr class="border-b border-white/5">
+                                <td class="p-3 text-slate-400">OGC 服务</td>
+                                <td class="p-3 text-center text-amber-400">插件支持</td>
+                                <td class="p-3 text-center text-blue-400">原生支持</td>
+                            </tr>
+                            <tr class="border-b border-white/5">
+                                <td class="p-3 text-slate-400">移动端</td>
+                                <td class="p-3 text-center text-emerald-400">优秀</td>
+                                <td class="p-3 text-center text-blue-400">一般</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 text-slate-400">适用场景</td>
+                                <td class="p-3 text-center text-emerald-400">大多数 2D 项目</td>
+                                <td class="p-3 text-center text-blue-400">复杂 GIS 系统</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="section-container" data-section="6">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    三维地图<span class="glow-text">框架</span>
+                </h2>
+                <p class="text-slate-400 reveal stagger-1">从二维平面到三维世界 —— 更直观的空间表达</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6 mb-12">
+                <!-- Cesium -->
+                <div class="info-card p-6 reveal stagger-1">
+                    <div class="text-center mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-blue-900/30 flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-8 h-8 text-blue-400" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/>
+                                <ellipse cx="12" cy="12" rx="8" ry="3" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                                <ellipse cx="12" cy="12" rx="3" ry="8" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-white">Cesium</h3>
+                        <p class="text-sm text-blue-400 mt-1">三维地球之王</p>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 真三维地球，支持地形</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 3D Tiles 标准制定者</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> WebGL 渲染，性能好</div>
+                        <div class="flex items-center gap-2"><span class="text-amber-400">&#9888;</span> 体积较大 (~3MB+)</div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10 text-xs text-slate-400">
+                        适合：数字孪生、三维城市、模拟仿真
+                    </div>
+                </div>
+
+                <!-- Mapbox GL JS -->
+                <div class="info-card p-6 reveal stagger-2">
+                    <div class="text-center mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-violet-900/30 flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-8 h-8 text-violet-400" viewBox="0 0 24 24" fill="none">
+                                <path d="M3 7l9-4 9 4v10l-9 4-9-4V7z" stroke="currentColor" stroke-width="1.5" fill="rgba(139,92,246,0.1)"/>
+                                <path d="M12 3v18M3 7l9 4 9-4" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-white">Mapbox GL JS</h3>
+                        <p class="text-sm text-violet-400 mt-1">矢量地图美学</p>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 矢量瓦片渲染，极致流畅</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 支持地形和 3D 建筑</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 样式定制能力极强</div>
+                        <div class="flex items-center gap-2"><span class="text-amber-400">&#9888;</span> 需要 Mapbox Token</div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-violet-500/5 border border-violet-500/10 text-xs text-slate-400">
+                        适合：精美地图展示、导航、数据可视化
+                    </div>
+                </div>
+
+                <!-- ArcGIS -->
+                <div class="info-card p-6 reveal stagger-3">
+                    <div class="text-center mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-orange-900/30 flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-8 h-8 text-orange-400" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5" fill="rgba(251,146,60,0.1)"/>
+                                <path d="M8 12a4 4 0 018 0" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                <circle cx="12" cy="12" r="2" fill="rgba(251,146,60,0.4)"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-white">ArcGIS JS API</h3>
+                        <p class="text-sm text-orange-400 mt-1">企业级 GIS 平台</p>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> Esri 生态，功能最全面</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 2D/3D 一体化，支持 WebScene</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 空间分析、数据编辑能力强大</div>
+                        <div class="flex items-center gap-2"><span class="text-amber-400">&#9888;</span> 体积大，学习曲线较陡</div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-orange-500/5 border border-orange-500/10 text-xs text-slate-400">
+                        适合：政务 GIS、自然资源、城市管理
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3D Tiles Concept -->
+            <div class="reveal stagger-4">
+                <div class="info-card p-6 md:p-8">
+                    <h3 class="font-display font-bold text-white mb-2">3D Tiles —— 三维数据的标准</h3>
+                    <p class="text-sm text-slate-500 mb-6">将海量三维模型数据（建筑、地形、点云）分级分块，按需加载渲染</p>
+                    <div class="flex flex-col md:flex-row gap-6 items-center">
+                        <div class="flex-1 space-y-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center shrink-0">
+                                    <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-semibold text-sm">建筑物模型 (b3dm)</h4>
+                                    <p class="text-xs text-slate-500">BIM 模型、倾斜摄影、人工建模</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/></svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-semibold text-sm">地形数据 (terrain)</h4>
+                                    <p class="text-xs text-slate-500">DEM 高程数据、地形渲染</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
+                                    <svg class="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 14l5-5 5 5"/></svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-semibold text-sm">点云数据 (pnts)</h4>
+                                    <p class="text-xs text-slate-500">激光雷达扫描、三维点云</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tiles-anim-trigger" class="svg-zoomable w-full md:w-64 h-48 rounded-xl overflow-hidden border border-white/5 flex items-center justify-center" style="background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #334155 100%);">
+                            <div class="text-center">
+                                <div class="relative w-32 h-32 mx-auto">
+                                    <!-- 3D Tiles LOD Refinement Animation -->
+                                    <svg viewBox="0 0 120 120" class="w-full h-full">
+                                        <style>
+                                            /* Root bounding volume */
+                                            .bv-root{animation:bvR 8s ease-in-out infinite}
+                                            @keyframes bvR{0%,2%{opacity:0}8%,90%{opacity:.35}96%,100%{opacity:0}}
+                                            /* LOD 0 - coarse tile */
+                                            .lod0{animation:l0 8s ease-in-out infinite}
+                                            @keyframes l0{0%,10%{opacity:0}17%{opacity:1}35%{opacity:1}44%{opacity:0}100%{opacity:0}}
+                                            /* Child bounding volumes */
+                                            .bv-ch{animation:bvc 8s ease-in-out infinite}
+                                            @keyframes bvc{0%,38%{opacity:0}47%,88%{opacity:1}94%,100%{opacity:0}}
+                                            /* LOD 1 - refined buildings */
+                                            .lod1{animation:l1 8s ease-in-out infinite}
+                                            @keyframes l1{0%,48%{opacity:0}57%,86%{opacity:1}92%,100%{opacity:0}}
+                                            /* LOD 2 - further detail on one tile */
+                                            .lod2{animation:l2 8s ease-in-out infinite}
+                                            @keyframes l2{0%,64%{opacity:0}71%,82%{opacity:1}88%,100%{opacity:0}}
+                                            /* Labels */
+                                            .lbl0{animation:lb0 8s ease-in-out infinite}
+                                            @keyframes lb0{0%,13%{opacity:0}19%,33%{opacity:.8}40%,100%{opacity:0}}
+                                            .lbl1{animation:lb1 8s ease-in-out infinite}
+                                            @keyframes lb1{0%,52%{opacity:0}58%,84%{opacity:.8}90%,100%{opacity:0}}
+                                            .lbl2{animation:lb2 8s ease-in-out infinite}
+                                            @keyframes lb2{0%,68%{opacity:0}73%,80%{opacity:.8}86%,100%{opacity:0}}
+                                            /* Scan line */
+                                            .scan{animation:scV 8s ease-in-out infinite}
+                                            @keyframes scV{0%,6%{opacity:0}10%,88%{opacity:1}93%,100%{opacity:0}}
+                                            .scan-inner{animation:scY 8s linear infinite}
+                                            @keyframes scY{0%,8%{transform:translateY(0)}88%{transform:translateY(86px)}100%{transform:translateY(86px)}}
+                                        </style>
+
+                                        <!-- Ground -->
+                                        <line x1="10" y1="100" x2="110" y2="100" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+
+                                        <!-- Scan line effect -->
+                                        <g class="scan">
+                                            <g class="scan-inner">
+                                                <line x1="15" y1="12" x2="105" y2="12" stroke="rgba(34,211,238,0.06)" stroke-width="18"/>
+                                                <line x1="15" y1="12" x2="105" y2="12" stroke="rgba(34,211,238,0.5)" stroke-width="0.5"/>
+                                            </g>
+                                        </g>
+
+                                        <!-- Phase 1: Root bounding volume -->
+                                        <g class="bv-root">
+                                            <rect x="15" y="12" width="90" height="86" rx="2" fill="none" stroke="rgba(34,211,238,0.5)" stroke-width="0.8" stroke-dasharray="4,2"/>
+                                        </g>
+
+                                        <!-- Phase 2: LOD 0 - coarse tile content -->
+                                        <g class="lod0">
+                                            <polygon points="60,25 85,35 85,75 60,85 35,75 35,35" fill="rgba(34,211,238,0.06)" stroke="rgba(34,211,238,0.4)" stroke-width="1"/>
+                                            <polygon points="60,25 85,35 60,45 35,35" fill="rgba(34,211,238,0.12)" stroke="rgba(34,211,238,0.55)" stroke-width="1"/>
+                                        </g>
+
+                                        <!-- Phase 3: Child bounding volumes (4 children) -->
+                                        <g class="bv-ch">
+                                            <rect x="15" y="12" width="44" height="42" rx="1" fill="none" stroke="rgba(34,211,238,0.25)" stroke-width="0.5" stroke-dasharray="2,2"/>
+                                            <rect x="61" y="12" width="44" height="42" rx="1" fill="none" stroke="rgba(34,211,238,0.25)" stroke-width="0.5" stroke-dasharray="2,2"/>
+                                            <rect x="15" y="56" width="44" height="42" rx="1" fill="none" stroke="rgba(34,211,238,0.25)" stroke-width="0.5" stroke-dasharray="2,2"/>
+                                            <rect x="61" y="56" width="44" height="42" rx="1" fill="none" stroke="rgba(34,211,238,0.25)" stroke-width="0.5" stroke-dasharray="2,2"/>
+                                        </g>
+
+                                        <!-- Phase 4: LOD 1 - refined buildings in child tiles -->
+                                        <g class="lod1">
+                                            <!-- Top-left: tall cyan building -->
+                                            <polygon points="32,20 44,15 44,48 32,53" fill="rgba(34,211,238,0.1)" stroke="rgba(34,211,238,0.5)" stroke-width="0.8"/>
+                                            <polygon points="44,15 44,48 56,43 56,10" fill="rgba(34,211,238,0.05)" stroke="rgba(34,211,238,0.35)" stroke-width="0.8"/>
+                                            <polygon points="44,15 56,10 44,5 32,10" fill="rgba(34,211,238,0.15)" stroke="rgba(34,211,238,0.55)" stroke-width="0.8"/>
+                                            <!-- Top-right: violet building -->
+                                            <polygon points="72,25 82,20 82,42 72,47" fill="rgba(168,85,247,0.1)" stroke="rgba(168,85,247,0.45)" stroke-width="0.8"/>
+                                            <polygon points="82,20 82,42 92,37 92,15" fill="rgba(168,85,247,0.05)" stroke="rgba(168,85,247,0.3)" stroke-width="0.8"/>
+                                            <polygon points="82,20 92,15 82,10 72,15" fill="rgba(168,85,247,0.12)" stroke="rgba(168,85,247,0.5)" stroke-width="0.8"/>
+                                            <!-- Bottom-left: short building -->
+                                            <polygon points="30,72 42,68 42,88 30,92" fill="rgba(34,211,238,0.08)" stroke="rgba(34,211,238,0.4)" stroke-width="0.8"/>
+                                            <polygon points="42,68 42,88 54,84 54,64" fill="rgba(34,211,238,0.04)" stroke="rgba(34,211,238,0.28)" stroke-width="0.8"/>
+                                            <polygon points="42,68 54,64 42,60 30,64" fill="rgba(34,211,238,0.1)" stroke="rgba(34,211,238,0.45)" stroke-width="0.8"/>
+                                            <!-- Bottom-right: building with rooftop -->
+                                            <polygon points="74,62 84,58 84,82 74,86" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.4)" stroke-width="0.8"/>
+                                            <polygon points="84,58 84,82 94,78 94,54" fill="rgba(168,85,247,0.04)" stroke="rgba(168,85,247,0.28)" stroke-width="0.8"/>
+                                            <polygon points="84,58 94,54 84,50 74,54" fill="rgba(168,85,247,0.1)" stroke="rgba(168,85,247,0.45)" stroke-width="0.8"/>
+                                        </g>
+
+                                        <!-- Phase 5: LOD 2 - one tile further refines -->
+                                        <g class="lod2">
+                                            <rect x="15" y="12" width="44" height="42" rx="1" fill="rgba(34,211,238,0.04)" stroke="rgba(34,211,238,0.6)" stroke-width="0.8"/>
+                                            <line x1="38" y1="20" x2="38" y2="52" stroke="rgba(34,211,238,0.2)" stroke-width="0.3"/>
+                                            <line x1="32" y1="30" x2="56" y2="23" stroke="rgba(34,211,238,0.15)" stroke-width="0.3"/>
+                                            <polygon points="38,22 44,19 44,30 38,33" fill="rgba(34,211,238,0.1)" stroke="rgba(34,211,238,0.35)" stroke-width="0.5"/>
+                                        </g>
+
+                                        <!-- Labels -->
+                                        <text class="lbl0" x="60" y="108" text-anchor="middle" fill="rgba(34,211,238,0.8)" font-size="5" font-family="monospace">LOD 0 · geometricError: 50m</text>
+                                        <text class="lbl1" x="60" y="108" text-anchor="middle" fill="rgba(168,85,247,0.8)" font-size="5" font-family="monospace">LOD 1 · geometricError: 5m</text>
+                                        <text class="lbl2" x="37" y="108" text-anchor="middle" fill="rgba(34,211,238,0.9)" font-size="4.5" font-family="monospace">LOD 2 · 0.5m</text>
+                                    </svg>
+                                </div>
+                                <p class="text-[10px] text-slate-600 mt-2">3D Tiles LOD 细化动画</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="section-container" data-section="7">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    国产<span class="glow-text">地图 API</span>
+                </h2>
+                <p class="text-slate-400 reveal stagger-1">国内项目必须了解 —— 高德、百度、天地图、超图</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <!-- AMap -->
+                <div class="info-card p-6 reveal stagger-1">
+                    <div class="text-center mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-900/30 flex items-center justify-center mx-auto mb-3">
+                            <span class="text-emerald-400 font-display font-bold text-lg">G</span>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-white">高德地图</h3>
+                        <p class="text-sm text-emerald-400 mt-1">AMap / AMap JS API</p>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 国内 POI 数据最全</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 路径规划、导航功能强</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> JS API 2.0 全面升级</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 坐标系: GCJ-02</div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10 text-xs text-slate-400">
+                        适合：出行类、O2O、物流监控
+                    </div>
+                </div>
+
+                <!-- Baidu -->
+                <div class="info-card p-6 reveal stagger-2">
+                    <div class="text-center mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-blue-900/30 flex items-center justify-center mx-auto mb-3">
+                            <span class="text-blue-400 font-display font-bold text-lg">B</span>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-white">百度地图</h3>
+                        <p class="text-sm text-blue-400 mt-1">Baidu Map JS API</p>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 详细的室内地图</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 个性化地图定制</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 百度生态整合</div>
+                        <div class="flex items-center gap-2"><span class="text-amber-400">&#9888;</span> 坐标系: BD-09 (独有)</div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10 text-xs text-slate-400">
+                        适合：LBS 服务、室内导航
+                    </div>
+                </div>
+
+                <!-- Tianditu -->
+                <div class="info-card p-6 reveal stagger-3">
+                    <div class="text-center mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-amber-900/30 flex items-center justify-center mx-auto mb-3">
+                            <span class="text-amber-400 font-display font-bold text-lg">T</span>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-white">天地图</h3>
+                        <p class="text-sm text-amber-400 mt-1">国家地理信息公共服务平台</p>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 国家权威数据来源</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 免费开发者 Key</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 支持标准 OGC 服务</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 坐标系: CGCS2000 (4490)</div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-amber-500/5 border border-amber-500/10 text-xs text-slate-400">
+                        适合：政务项目、底图服务
+                    </div>
+                </div>
+
+                <!-- SuperMap -->
+                <div class="info-card p-6 reveal stagger-4">
+                    <div class="text-center mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-violet-900/30 flex items-center justify-center mx-auto mb-3">
+                            <span class="text-violet-400 font-display font-bold text-lg">S</span>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-white">超图</h3>
+                        <p class="text-sm text-violet-400 mt-1">SuperMap iClient / iServer</p>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 完整 GIS 平台（桌面/服务/Web）</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 3D WebGL &amp; 大数据 GIS</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 国产信创适配</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 支持多坐标系</div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-violet-500/5 border border-violet-500/10 text-xs text-slate-400">
+                        适合：政企 GIS、信创项目、专业分析
+                    </div>
+                </div>
+            </div>
+
+            <!-- Important Note -->
+            <div class="reveal stagger-4">
+                <div class="info-card p-5 border-amber-500/20">
+                    <div class="flex items-start gap-3">
+                        <div class="shrink-0 w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center mt-0.5">
+                            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-amber-400 mb-1">注意：坐标转换</h4>
+                            <p class="text-sm text-slate-400">使用国产地图 API 时，务必确认坐标系！WGS-84 坐标需要转换为 GCJ-02（高德）或 BD-09（百度）才能正确显示位置。天地图使用 CGCS2000 坐标系（与 WGS-84 几乎一致）。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== Section 8: GIS Servers ==================== -->
+    <section class="section-container" data-section="8">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    GIS<span class="glow-text">服务器</span>
+                </h2>
+                <p class="text-slate-400 reveal stagger-1">地图数据发布与管理的中枢 —— GeoServer、ArcGIS Server、SuperMap iServer</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6 mb-12">
+                <!-- GeoServer -->
+                <div class="info-card p-6 reveal stagger-1 gis-server-card" data-server="geoserver">
+                    <div class="text-center mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-green-900/30 flex items-center justify-center mx-auto mb-3">
+                            <span class="text-green-400 font-display font-bold text-lg">G</span>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-white">GeoServer</h3>
+                        <p class="text-sm text-green-400 mt-1">开源 · OGC 标准实现</p>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 完整 OGC 标准 (WMS/WFS/WCS)</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 支持多种数据源 (PostGIS/Shapefile)</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> REST API 管理与配置</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 瓦片缓存 (GeoWebCache)</div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-green-500/5 border border-green-500/10 text-xs text-slate-400">
+                        适合：开源项目、科研教学、预算有限的团队
+                    </div>
+                    <div class="click-hint">&#128270; 点击查看服务 URL 样例</div>
+                </div>
+
+                <!-- ArcGIS Server -->
+                <div class="info-card p-6 reveal stagger-2 gis-server-card" data-server="arcgis">
+                    <div class="text-center mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-blue-900/30 flex items-center justify-center mx-auto mb-3">
+                            <span class="text-blue-400 font-display font-bold text-lg">A</span>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-white">ArcGIS Server</h3>
+                        <p class="text-sm text-blue-400 mt-1">Esri · 行业标杆</p>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 企业级 GIS 平台生态完整</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 强大的空间分析与地理处理</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> Map/Image/Feature Service 全支持</div>
+                        <div class="flex items-center gap-2"><span class="text-amber-400">&#9888;</span> 商业授权，成本较高</div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10 text-xs text-slate-400">
+                        适合：大型企业、专业 GIS 团队、高要求项目
+                    </div>
+                    <div class="click-hint">&#128270; 点击查看服务 URL 样例</div>
+                </div>
+
+                <!-- SuperMap iServer -->
+                <div class="info-card p-6 reveal stagger-3 gis-server-card" data-server="supermap">
+                    <div class="text-center mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-violet-900/30 flex items-center justify-center mx-auto mb-3">
+                            <span class="text-violet-400 font-display font-bold text-lg">S</span>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-white">SuperMap iServer</h3>
+                        <p class="text-sm text-violet-400 mt-1">国产 · 云原生 GIS 服务</p>
+                    </div>
+                    <div class="space-y-2 text-sm text-slate-400">
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 支持 OGC / REST 多种服务标准</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 分布式集群与高可用架构</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 二三维一体化发布</div>
+                        <div class="flex items-center gap-2"><span class="text-cyan-400">&#10003;</span> 信创环境全面适配</div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-violet-500/5 border border-violet-500/10 text-xs text-slate-400">
+                        适合：政务信创、国产化替代、大型项目
+                    </div>
+                    <div class="click-hint">&#128270; 点击查看服务 URL 样例</div>
+                </div>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="reveal stagger-4">
+                <div class="info-card p-6">
+                    <h4 class="font-display font-bold text-lg text-white mb-4 text-center">GIS 服务器对比一览</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-white/10">
+                                    <th class="text-left py-2 px-3 text-slate-300 font-medium">特性</th>
+                                    <th class="text-center py-2 px-3 text-green-400 font-medium">GeoServer</th>
+                                    <th class="text-center py-2 px-3 text-blue-400 font-medium">ArcGIS Server</th>
+                                    <th class="text-center py-2 px-3 text-violet-400 font-medium">SuperMap iServer</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-slate-400">
+                                <tr class="border-b border-white/5">
+                                    <td class="py-2 px-3">开源 / 商业</td>
+                                    <td class="py-2 px-3 text-center">开源免费 (GPL)</td>
+                                    <td class="py-2 px-3 text-center">商业授权</td>
+                                    <td class="py-2 px-3 text-center">商业授权</td>
+                                </tr>
+                                <tr class="border-b border-white/5">
+                                    <td class="py-2 px-3">OGC 标准</td>
+                                    <td class="py-2 px-3 text-center">全面支持</td>
+                                    <td class="py-2 px-3 text-center">全面支持</td>
+                                    <td class="py-2 px-3 text-center">全面支持</td>
+                                </tr>
+                                <tr class="border-b border-white/5">
+                                    <td class="py-2 px-3">三维服务</td>
+                                    <td class="py-2 px-3 text-center">基础支持</td>
+                                    <td class="py-2 px-3 text-center">强大 (I3S/3D Tiles)</td>
+                                    <td class="py-2 px-3 text-center">强大 (S3M)</td>
+                                </tr>
+                                <tr class="border-b border-white/5">
+                                    <td class="py-2 px-3">空间分析</td>
+                                    <td class="py-2 px-3 text-center">基础 (WPS)</td>
+                                    <td class="py-2 px-3 text-center">极其丰富</td>
+                                    <td class="py-2 px-3 text-center">丰富</td>
+                                </tr>
+                                <tr class="border-b border-white/5">
+                                    <td class="py-2 px-3">信创适配</td>
+                                    <td class="py-2 px-3 text-center">需自行适配</td>
+                                    <td class="py-2 px-3 text-center">有限支持</td>
+                                    <td class="py-2 px-3 text-center">全面适配</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2 px-3">部署难度</td>
+                                    <td class="py-2 px-3 text-center">低 (Docker 一键)</td>
+                                    <td class="py-2 px-3 text-center">中等</td>
+                                    <td class="py-2 px-3 text-center">中等</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== Section 9: Live Demo ==================== -->
+    <section class="section-container" data-section="9">
+        <div class="max-w-6xl mx-auto w-full">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    实战演示：<span class="glow-text">从零构建地图应用</span>
+                </h2>
+                <p class="text-slate-400 reveal stagger-1">跟着步骤走，亲手搭建一个完整的 WebGIS 应用</p>
+            </div>
+
+            <!-- Step Buttons -->
+            <div class="flex flex-wrap gap-2 justify-center mb-6 reveal stagger-2">
+                <button class="step-btn px-3 py-2 rounded-lg border border-white/10 text-sm text-slate-400 flex items-center gap-2" data-step="1">
+                    <span class="step-num">1</span> 创建地图容器
+                </button>
+                <button class="step-btn px-3 py-2 rounded-lg border border-white/10 text-sm text-slate-400 flex items-center gap-2" data-step="2">
+                    <span class="step-num">2</span> 加载底图
+                </button>
+                <button class="step-btn px-3 py-2 rounded-lg border border-white/10 text-sm text-slate-400 flex items-center gap-2" data-step="3">
+                    <span class="step-num">3</span> 行政区边界
+                </button>
+                <button class="step-btn px-3 py-2 rounded-lg border border-white/10 text-sm text-slate-400 flex items-center gap-2" data-step="4">
+                    <span class="step-num">4</span> 业务点位
+                </button>
+                <button class="step-btn px-3 py-2 rounded-lg border border-white/10 text-sm text-slate-400 flex items-center gap-2" data-step="5">
+                    <span class="step-num">5</span> 弹窗交互
+                </button>
+                <button class="step-btn px-3 py-2 rounded-lg border border-white/10 text-sm text-slate-400 flex items-center gap-2" data-step="6">
+                    <span class="step-num">6</span> 动态效果
+                </button>
+            </div>
+
+            <!-- Demo Area: Code + Map -->
+            <div class="grid md:grid-cols-2 gap-4 reveal stagger-3">
+                <!-- Code Panel -->
+                <div class="info-card overflow-hidden">
+                    <div class="px-4 py-2 bg-black/30 border-b border-white/5 flex items-center justify-between">
+                        <span class="text-xs font-mono text-slate-500" id="code-title">Step 1: 创建地图容器</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">实时演示</span>
+                    </div>
+                    <div class="code-block border-0 rounded-none p-5 text-xs leading-relaxed h-80 md:h-[420px] overflow-y-auto" id="demo-code">
+                    </div>
+                </div>
+
+                <!-- Map Panel -->
+                <div class="info-card p-0">
+                    <div class="px-4 py-2 bg-black/30 border-b border-white/5 flex items-center justify-between">
+                        <span class="text-xs font-mono text-slate-500" id="map-title">地图预览</span>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span class="text-[10px] text-emerald-400">LIVE</span>
+                        </div>
+                    </div>
+                    <div id="live-map" class="w-full h-80 md:h-[420px] bg-slate-950 relative">
+                        <div id="map-placeholder" class="absolute inset-0 flex items-center justify-center">
+                            <div class="text-center">
+                                <svg class="w-16 h-16 mx-auto text-slate-700 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                                <p class="text-slate-600 text-sm">点击步骤按钮开始构建地图</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== Section 10: Selection Guide ==================== -->
+    <section class="section-container" data-section="10">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    框架<span class="glow-text">选型指南</span>
+                </h2>
+                <p class="text-slate-400 reveal stagger-1">根据项目需求选择合适的技术栈</p>
+            </div>
+
+            <!-- Scenario-based Selection -->
+            <div class="reveal stagger-2">
+                <div class="grid md:grid-cols-2 gap-5">
+                    <!-- Scenario 1 -->
+                    <div class="info-card p-5 flex gap-4">
+                        <div class="shrink-0 w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-500/15 text-orange-400">场景</span>
+                                <span class="text-white font-semibold text-sm">客户使用 ArcGIS Server 发布地图服务</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-2">需要对接 MapService / FeatureService，进行空间查询、数据编辑</p>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-slate-500">选型：</span>
+                                <span class="text-xs font-bold text-orange-400">ArcGIS JS API</span>
+                                <span class="text-[10px] text-slate-600">（原生支持 ArcGIS Server 服务，无需适配）</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Scenario 2 -->
+                    <div class="info-card p-5 flex gap-4">
+                        <div class="shrink-0 w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-400">场景</span>
+                                <span class="text-white font-semibold text-sm">需要地名地址查询、路径规划</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-2">POI 搜索、地址解析、逆地理编码、导航路线</p>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-slate-500">选型：</span>
+                                <span class="text-xs font-bold text-emerald-400">高德 JS API</span>
+                                <span class="text-[10px] text-slate-600">（地理编码、POI、路线规划等服务开箱即用）</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Scenario 3 -->
+                    <div class="info-card p-5 flex gap-4">
+                        <div class="shrink-0 w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-500/15 text-cyan-400">场景</span>
+                                <span class="text-white font-semibold text-sm">展示一张地图，标注点位，简单交互</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-2">加载瓦片底图 + GeoJSON 边界 + 标记点 + 弹窗，没有复杂 GIS 需求</p>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-slate-500">选型：</span>
+                                <span class="text-xs font-bold text-cyan-400">Leaflet</span>
+                                <span class="text-[10px] text-slate-600">（轻量 ~40KB，上手快，插件丰富，大多数 2D 项目首选）</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Scenario 4 -->
+                    <div class="info-card p-5 flex gap-4">
+                        <div class="shrink-0 w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-400">场景</span>
+                                <span class="text-white font-semibold text-sm">需要对接多种 OGC 标准服务</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-2">WMS / WFS / WCS 多种服务，自定义投影，需要完整的 GIS 功能</p>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-slate-500">选型：</span>
+                                <span class="text-xs font-bold text-blue-400">OpenLayers</span>
+                                <span class="text-[10px] text-slate-600">（原生支持 OGC 全家桶，任意投影，企业级首选）</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Scenario 5 -->
+                    <div class="info-card p-5 flex gap-4">
+                        <div class="shrink-0 w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-violet-400" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="8" ry="3" stroke="currentColor" stroke-width="1" opacity="0.5"/><ellipse cx="12" cy="12" rx="3" ry="8" stroke="currentColor" stroke-width="1" opacity="0.5"/></svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-violet-500/15 text-violet-400">场景</span>
+                                <span class="text-white font-semibold text-sm">需要三维地球、数字孪生</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-2">加载 3D Tiles 建筑模型、地形数据，实现三维场景浏览与模拟</p>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-slate-500">选型：</span>
+                                <span class="text-xs font-bold text-violet-400">Cesium</span>
+                                <span class="text-[10px] text-slate-600">（3D Tiles 标准制定者，三维地球领域的绝对主力）</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Scenario 6 -->
+                    <div class="info-card p-5 flex gap-4">
+                        <div class="shrink-0 w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/></svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-400">场景</span>
+                                <span class="text-white font-semibold text-sm">需要精美的地图可视化风格</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-2">数据大屏展示，自定义地图样式，矢量瓦片渲染，流畅交互</p>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-slate-500">选型：</span>
+                                <span class="text-xs font-bold text-amber-400">Mapbox GL JS</span>
+                                <span class="text-[10px] text-slate-600">（矢量瓦片极致渲染，样式定制能力最强）</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Scenario 7 -->
+                    <div class="info-card p-5 flex gap-4">
+                        <div class="shrink-0 w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-pink-500/15 text-pink-400">场景</span>
+                                <span class="text-white font-semibold text-sm">政务项目，需要权威底图数据</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-2">CGCS2000 坐标系，国产合规，免费可用的影像和矢量底图</p>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-slate-500">选型：</span>
+                                <span class="text-xs font-bold text-pink-400">天地图 + Leaflet/OL</span>
+                                <span class="text-[10px] text-slate-600">（国家平台，免费开发者 Key，可作为任意框架底图）</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Scenario 8 -->
+                    <div class="info-card p-5 flex gap-4">
+                        <div class="shrink-0 w-12 h-12 rounded-xl bg-sky-500/10 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-500/15 text-sky-400">场景</span>
+                                <span class="text-white font-semibold text-sm">快速出原型，项目不确定用什么框架</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-2">先跑通地图功能，后续再按需切换，或者项目本身就是简单展示</p>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-slate-500">选型：</span>
+                                <span class="text-xs font-bold text-sky-400">Leaflet</span>
+                                <span class="text-[10px] text-slate-600">（最容易上手，API 简洁，社区活跃，80% 的 2D 需求都能满足）</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Learning Path -->
+            <div class="mt-12 reveal stagger-3">
+                <div class="info-card p-6 md:p-8">
+                    <h3 class="font-display font-bold text-white text-xl mb-6 text-center">推荐学习路径</h3>
+                    <div class="flex flex-col md:flex-row items-stretch gap-4">
+                        <div class="flex-1 p-4 rounded-xl bg-gradient-to-br from-cyan-500/5 to-cyan-500/0 border border-cyan-500/10">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="w-6 h-6 rounded-full bg-cyan-500 text-white text-xs flex items-center justify-center font-bold">1</span>
+                                <h4 class="font-bold text-cyan-400 text-sm">基础入门</h4>
+                            </div>
+                            <p class="text-xs text-slate-400">HTML/CSS/JS + GIS 基础概念（坐标系、投影、瓦片）</p>
+                        </div>
+                        <div class="flex-1 p-4 rounded-xl bg-gradient-to-br from-emerald-500/5 to-emerald-500/0 border border-emerald-500/10">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="w-6 h-6 rounded-full bg-emerald-500 text-white text-xs flex items-center justify-center font-bold">2</span>
+                                <h4 class="font-bold text-emerald-400 text-sm">二维实战</h4>
+                            </div>
+                            <p class="text-xs text-slate-400">Leaflet / 高德 API → 加载底图 → GeoJSON → 覆盖物 → 交互</p>
+                        </div>
+                        <div class="flex-1 p-4 rounded-xl bg-gradient-to-br from-violet-500/5 to-violet-500/0 border border-violet-500/10">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="w-6 h-6 rounded-full bg-violet-500 text-white text-xs flex items-center justify-center font-bold">3</span>
+                                <h4 class="font-bold text-violet-400 text-sm">进阶能力</h4>
+                            </div>
+                            <p class="text-xs text-slate-400">WMS/WFS 服务、空间分析、数据编辑、动画效果</p>
+                        </div>
+                        <div class="flex-1 p-4 rounded-xl bg-gradient-to-br from-amber-500/5 to-amber-500/0 border border-amber-500/10">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="w-6 h-6 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold">4</span>
+                                <h4 class="font-bold text-amber-400 text-sm">三维开发</h4>
+                            </div>
+                            <p class="text-xs text-slate-400">Cesium / ArcGIS → 3D Tiles → 地形 → 三维场景搭建</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ==================== Section 11: 开发注意事项 ==================== -->
+    <section class="section-container" data-section="11">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    开发<span class="glow-text">注意事项</span>
+                </h2>
+                <p class="text-slate-400 text-lg reveal stagger-1">实际开发中容易踩的坑，提前了解避免浪费时间</p>
+            </div>
+
+            <!-- Note Cards -->
+            <div class="grid md:grid-cols-1 gap-5 mb-12 reveal stagger-2">
+                <!-- Note 1: 第三方渲染库实例禁止响应式包裹 -->
+                <div class="info-card p-6 border-l-4 border-l-red-500/60">
+                    <div class="flex gap-4">
+                        <div class="shrink-0 w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 2l10 18H2L12 2z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/15 text-red-400">禁止</span>
+                                <span class="text-white font-semibold">第三方渲染库实例禁止用 Vue ref/reactive 包裹</span>
+                            </div>
+                            <p class="text-sm text-slate-400 mb-3">地图（Leaflet、Mapbox、Cesium）、图表（ECharts、D3）、三维引擎（Three.js）等第三方库的实例对象，一律用普通变量定义。这些库自行管理 DOM 渲染，Vue 的响应式代理（Proxy）只会带来无谓的性能开销和不可预期的副作用。</p>
+                            <div class="grid md:grid-cols-2 gap-3">
+                                <div class="code-block p-3">
+                                    <div class="text-[10px] text-red-400 font-bold mb-1.5">❌ 错误写法</div>
+                                    <pre class="text-xs leading-relaxed"><span class="keyword">import</span> { <span class="function">ref</span>, <span class="function">onMounted</span> } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">import</span> L <span class="keyword">from</span> <span class="string">'leaflet'</span>
+
+<span class="keyword">const</span> <span class="property">map</span> = <span class="function">ref</span>(<span class="keyword">null</span>)  <span class="comment">// ❌ 被代理，性能浪费</span>
+<span class="function">onMounted</span>(() => {
+  <span class="property">map</span>.value = L.<span class="function">map</span>(<span class="string">'map-container'</span>)
+})</pre>
+                                </div>
+                                <div class="code-block p-3">
+                                    <div class="text-[10px] text-emerald-400 font-bold mb-1.5">✅ 正确写法</div>
+                                    <pre class="text-xs leading-relaxed"><span class="keyword">import</span> { <span class="function">onMounted</span> } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">import</span> L <span class="keyword">from</span> <span class="string">'leaflet'</span>
+
+<span class="keyword">let</span> map = <span class="keyword">null</span>  <span class="comment">// ✅ 普通变量</span>
+<span class="function">onMounted</span>(() => {
+  map = L.<span class="function">map</span>(<span class="string">'map-container'</span>)
+})</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== Section 12: Frontier & Trends ==================== -->
+    <section class="section-container" data-section="12">
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    前沿技术与<span class="glow-text">发展趋势</span>
+                </h2>
+                <p class="text-slate-400 text-lg reveal stagger-1">WebGIS 在不断演进，关注前沿方向</p>
+            </div>
+
+            <!-- Frontier Tech Cards -->
+            <div class="grid md:grid-cols-2 gap-5 mb-12 reveal stagger-2">
+                <div class="info-card p-5 flex gap-4">
+                    <div class="shrink-0 w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-500/15 text-cyan-400">趋势</span>
+                            <span class="text-white font-semibold text-sm">WebGPU 渲染</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-2">新一代 Web 图形 API，大幅提升海量地理要素的渲染性能，未来将逐步取代 WebGL</p>
+                    </div>
+                </div>
+                <div class="info-card p-5 flex gap-4">
+                    <div class="shrink-0 w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-violet-500/15 text-violet-400">趋势</span>
+                            <span class="text-white font-semibold text-sm">AI + GIS</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-2">大模型辅助空间分析、智能地图标注、自然语言查询地理信息，AI 正在重塑 GIS 交互方式</p>
+                    </div>
+                </div>
+                <div class="info-card p-5 flex gap-4">
+                    <div class="shrink-0 w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-400">趋势</span>
+                            <span class="text-white font-semibold text-sm">数字孪生</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-2">Cesium / MapboxGL 构建城市级三维孪生场景，结合 IoT 实时数据驱动可视化决策</p>
+                    </div>
+                </div>
+                <div class="info-card p-5 flex gap-4">
+                    <div class="shrink-0 w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-400">趋势</span>
+                            <span class="text-white font-semibold text-sm">云端一体化</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-2">Mapbox/天地图等云平台提供一站式数据托管与渲染服务，前端只需专注业务逻辑与交互</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide Images -->
+            <div class="grid md:grid-cols-2 gap-4 reveal stagger-3">
+                <div class="slide-thumb" data-src="./imgs/slide_09_frontier.png">
+                    <img src="./imgs/slide_09_frontier.png" alt="前沿技术" loading="lazy" />
+                    <div class="slide-label">课件原图：前沿技术（点击查看大图）</div>
+                </div>
+                <div class="slide-thumb" data-src="./imgs/slide_10_trends.png">
+                    <img src="./imgs/slide_10_trends.png" alt="发展趋势" loading="lazy" />
+                    <div class="slide-label">课件原图：发展趋势（点击查看大图）</div>
+                </div>
+            </div>
+        </div>
+    </section>
+        <div class="max-w-5xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-white mb-4 reveal">
+                    开发<span class="glow-text">注意事项</span>
+                </h2>
+                <p class="text-slate-400 text-lg reveal stagger-1">实际开发中容易踩的坑，提前了解避免浪费时间</p>
+            </div>
+
+            <!-- Note Cards -->
+            <div class="grid md:grid-cols-1 gap-5 mb-12 reveal stagger-2">
+                <!-- Note 1: 第三方渲染库实例禁止响应式包裹 -->
+                <div class="info-card p-6 border-l-4 border-l-red-500/60">
+                    <div class="flex gap-4">
+                        <div class="shrink-0 w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 2l10 18H2L12 2z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/15 text-red-400">禁止</span>
+                                <span class="text-white font-semibold">第三方渲染库实例禁止用 Vue ref/reactive 包裹</span>
+                            </div>
+                            <p class="text-sm text-slate-400 mb-3">地图（Leaflet、Mapbox、Cesium）、图表（ECharts、D3）、三维引擎（Three.js）等第三方库的实例对象，一律用普通变量定义。这些库自行管理 DOM 渲染，Vue 的响应式代理（Proxy）只会带来无谓的性能开销和不可预期的副作用。</p>
+                            <div class="grid md:grid-cols-2 gap-3">
+                                <div class="code-block p-3">
+                                    <div class="text-[10px] text-red-400 font-bold mb-1.5">❌ 错误写法</div>
+                                    <pre class="text-xs leading-relaxed"><span class="keyword">import</span> { <span class="function">ref</span>, <span class="function">onMounted</span> } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">import</span> L <span class="keyword">from</span> <span class="string">'leaflet'</span>
+
+<span class="keyword">const</span> <span class="property">map</span> = <span class="function">ref</span>(<span class="keyword">null</span>)  <span class="comment">// ❌ 被代理，性能浪费</span>
+<span class="function">onMounted</span>(() => {
+  <span class="property">map</span>.value = L.<span class="function">map</span>(<span class="string">'map-container'</span>)
+})</pre>
+                                </div>
+                                <div class="code-block p-3">
+                                    <div class="text-[10px] text-emerald-400 font-bold mb-1.5">✅ 正确写法</div>
+                                    <pre class="text-xs leading-relaxed"><span class="keyword">import</span> { <span class="function">onMounted</span> } <span class="keyword">from</span> <span class="string">'vue'</span>
+<span class="keyword">import</span> L <span class="keyword">from</span> <span class="string">'leaflet'</span>
+
+<span class="keyword">let</span> map = <span class="keyword">null</span>  <span class="comment">// ✅ 普通变量</span>
+<span class="function">onMounted</span>(() => {
+  map = L.<span class="function">map</span>(<span class="string">'map-container'</span>)
+})</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== Lightbox ==================== -->
+    <div id="lightbox">
+        <img src="" alt="" />
+    </div>
+
+    <!-- ==================== SVG Modal (3D Tiles) ==================== -->
+    <div id="svg-modal">
+        <p class="modal-title">3D Tiles LOD 细化过程</p>
+        <div id="svg-modal-content"></div>
+        <div class="modal-phases">
+            <span class="modal-phase"><span class="dot" style="background:rgba(34,211,238,0.6)"></span>BoundingVolume</span>
+            <span class="modal-phase"><span class="dot" style="background:rgba(34,211,238,0.6)"></span>LOD 0 粗加载</span>
+            <span class="modal-phase"><span class="dot" style="background:rgba(168,85,247,0.6)"></span>子瓦片分裂</span>
+            <span class="modal-phase"><span class="dot" style="background:rgba(168,85,247,0.6)"></span>REPLACE 细化</span>
+            <span class="modal-phase"><span class="dot" style="background:rgba(34,211,238,0.8)"></span>递归 LOD</span>
+        </div>
+        <p class="modal-hint">点击任意位置 / ESC 关闭</p>
+    </div>
+
+    <!-- ==================== GIS Server URL Modal ==================== -->
+    <div id="gis-url-modal">
+        <div class="modal-box" id="gis-modal-box">
+            <div class="modal-header">
+                <h3 id="gis-modal-title" class="text-white"></h3>
+                <button class="modal-close" id="gis-modal-close">&times;</button>
+            </div>
+            <div id="gis-modal-body"></div>
+            <p style="color:rgba(255,255,255,0.2); font-size:11px; margin-top:20px; text-align:center;">点击遮罩层 / ESC 关闭</p>
+        </div>
+    </div>
+
+    <!-- ==================== Footer ==================== -->
+    <footer class="py-8 border-t border-white/5 text-center text-sm text-slate-600">
+        <p>WebGIS 前端开发实战指南</p>
+    </footer>
+
+    <!-- ==================== Scripts ==================== -->
+    <script>
+    // ================================================================
+    // 1. Hero Particle Canvas Animation
+    // ================================================================
+    (function initHeroParticles() {
+        const canvas = document.getElementById('hero-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let connections = [];
+
+        function resize() {
+            const section = canvas.parentElement;
+            canvas.width = section.offsetWidth;
+            canvas.height = section.offsetHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Create particles
+        for (let i = 0; i < 80; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4,
+                r: Math.random() * 2 + 1,
+                opacity: Math.random() * 0.5 + 0.1
+            });
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw particles
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(34, 211, 238, ${p.opacity})`;
+                ctx.fill();
+            });
+
+            // Draw connections
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(34, 211, 238, ${0.06 * (1 - dist / 120)})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+    })();
+
+    // ================================================================
+    // 2. Scroll Reveal & Progress Navigation
+    // ================================================================
+    (function initScrollReveal() {
+        const reveals = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
+        const sections = document.querySelectorAll('[data-section]');
+        const dots = document.querySelectorAll('.progress-dot');
+
+        // Intersection Observer for reveal animations
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+        reveals.forEach(el => revealObserver.observe(el));
+
+        // Progress dots
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const idx = entry.target.dataset.section;
+                    dots.forEach(d => d.classList.remove('active'));
+                    const activeDot = document.querySelector(`.progress-dot[data-section="${idx}"]`);
+                    if (activeDot) activeDot.classList.add('active');
+                }
+            });
+        }, { threshold: 0.4 });
+
+        sections.forEach(s => sectionObserver.observe(s));
+
+        // Dot click navigation
+        dots.forEach(dot => {
+            dot.addEventListener('click', () => {
+                const idx = dot.dataset.section;
+                const target = document.querySelector(`section[data-section="${idx}"]`);
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    })();
+
+    // ================================================================
+    // 3. Tile Cutting Animation (Section 3)
+    // ================================================================
+    (function initTileAnimation() {
+        const btn = document.getElementById('tile-play-btn');
+        const fullMap = document.getElementById('tile-full-map');
+        const tileGrid = document.getElementById('tile-grid');
+        if (!btn || !fullMap || !tileGrid) return;
+
+        // Create tile cells
+        for (let i = 0; i < 16; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'tile-cell';
+            const row = Math.floor(i / 4) + 1;
+            const col = (i % 4) + 1;
+            cell.style.backgroundImage = `url('imgs/tiles/crop_output/row${row}_col${col}.png')`;
+            cell.style.position = 'relative';
+            tileGrid.appendChild(cell);
+        }
+
+        const cells = tileGrid.querySelectorAll('.tile-cell');
+        let animating = false;
+
+        btn.addEventListener('click', () => {
+            if (animating) return;
+            animating = true;
+            btn.textContent = '加载中...';
+
+            // Reset
+            fullMap.style.opacity = '1';
+            tileGrid.style.display = 'none';
+            cells.forEach(c => { c.classList.remove('loaded', 'loading'); });
+
+            // Step 1: Show full map, then fade out
+            setTimeout(() => {
+                fullMap.style.opacity = '0';
+                setTimeout(() => {
+                    // Step 2: Show tile grid
+                    tileGrid.style.display = 'grid';
+
+                // Step 3: Load tiles one by one
+                cells.forEach((cell, i) => {
+                    setTimeout(() => {
+                        cell.classList.add('loading');
+                        setTimeout(() => {
+                            cell.classList.remove('loading');
+                            cell.classList.add('loaded');
+                        }, 200);
+                    }, i * 120);
+                });
+
+                // Done
+                setTimeout(() => {
+                    btn.innerHTML = '&#9654; 重新播放';
+                    animating = false;
+                }, 16 * 120 + 300);
+                });  // end inner setTimeout (after opacity fade)
+            }, 500);  // end outer setTimeout (fade out duration)
+        });
+    })();
+
+    // ================================================================
+    // 4. Live Demo - Step by Step Map Construction (Section 8)
+    // ================================================================
+    (function initLiveDemo() {
+        let demoMap = null;
+        let currentStep = 0;
+        const tdtKey = '6b798ba2afb70cc209a30d3e4a16753a';
+        const codeEl = document.getElementById('demo-code');
+        const codeTitle = document.getElementById('code-title');
+        const mapTitle = document.getElementById('map-title');
+        const placeholder = document.getElementById('map-placeholder');
+        const stepBtns = document.querySelectorAll('.step-btn');
+
+        // GeoJSON data: simplified Nanjing administrative boundary + monitoring points
+        const nanjingBoundary = {
+            type: "Feature",
+            properties: { name: "某某区域", adcode: 320100 },
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [118.3, 32.0], [118.9, 32.0], [119.2, 32.2], [119.2, 32.6],
+                    [119.0, 32.8], [118.7, 32.7], [118.4, 32.8], [118.2, 32.5],
+                    [118.3, 32.2], [118.3, 32.0]
+                ]]
+            }
+        };
+
+        const monitoringPoints = [
+            { name: "玄武湖监控站", type: "水质", status: "正常", lng: 118.79, lat: 32.08 },
+            { name: "紫金山气象站", type: "气象", status: "告警", lng: 118.85, lat: 32.06 },
+            { name: "新街口交通站", type: "交通", status: "正常", lng: 118.78, lat: 32.05 },
+            { name: "南京南站", type: "人流", status: "正常", lng: 118.81, lat: 31.95 },
+            { name: "浦口环保站", type: "空气", status: "正常", lng: 118.63, lat: 32.06 },
+        ];
+
+        const steps = [
+            {
+                title: 'Step 1: 创建地图容器',
+                mapTitle: '空白地图',
+                code: `<span class="comment">// 1. HTML 中创建地图容器</span>
+<span class="tag">&lt;div</span> <span class="attr">id</span>=<span class="string">"map"</span><span class="tag">&gt;&lt;/div&gt;</span>
+
+<span class="comment">// 2. CSS 设置容器大小</span>
+<span class="tag">#map</span> {
+  <span class="property">width</span>: <span class="number">100%</span>;
+  <span class="property">height</span>: <span class="number">100%</span>;
+}
+
+<span class="comment">// 3. JS 初始化 Leaflet 地图</span>
+<span class="keyword">const</span> map = L.<span class="function">map</span>(<span class="string">'map'</span>, {
+  <span class="property">crs</span>: L.CRS.<span class="property">EPSG4326</span>
+}).<span class="function">setView</span>(
+  [<span class="number">32.0</span>, <span class="number">118.7</span>], <span class="number">8</span>
+);`,
+                run: function() {
+                    placeholder.style.display = 'none';
+                    if (!demoMap) {
+                        demoMap = L.map('live-map', {
+                            crs: L.CRS.EPSG4326,
+                            zoomControl: false,
+                            attributionControl: false
+                        }).setView([32.0, 118.7], 8);
+                    }
+                }
+            },
+            {
+                title: 'Step 2: 加载天地图瓦片底图',
+                mapTitle: '天地图影像底图',
+                code: `<span class="comment">// 加载天地图影像底图</span>
+<span class="keyword">const</span> tdtUrl =
+  <span class="string">'https://t{s}.tianditu.gov.cn/DataServer?'</span> +
+  <span class="string">'T=img_c&x={x}&y={y}&l={z}&tk='</span> +
+  <span class="property">tdtKey</span>;
+
+<span class="keyword">const</span> labelUrl =
+  <span class="string">'https://t{s}.tianditu.gov.cn/DataServer?'</span> +
+  <span class="string">'T=cia_c&x={x}&y={y}&l={z}&tk='</span> +
+  <span class="property">tdtKey</span>;
+
+L.<span class="function">tileLayer</span>(tdtUrl, {
+  <span class="property">subdomains</span>: [<span class="number">0,1,2,3,4,5,6,7</span>],
+  <span class="property">zoomOffset</span>: <span class="number">1</span>,
+  <span class="property">maxNativeZoom</span>: <span class="number">17</span>
+}).<span class="function">addTo</span>(map);
+
+L.<span class="function">tileLayer</span>(labelUrl, {
+  <span class="property">subdomains</span>: [<span class="number">0,1,2,3,4,5,6,7</span>],
+  <span class="property">zoomOffset</span>: <span class="number">1</span>
+}).<span class="function">addTo</span>(map);`,
+                run: function() {
+                    const tdtImg = 'https://t{s}.tianditu.gov.cn/DataServer?T=img_c&x={x}&y={y}&l={z}&tk=' + tdtKey;
+                    const tdtLabel = 'https://t{s}.tianditu.gov.cn/DataServer?T=cia_c&x={x}&y={y}&l={z}&tk=' + tdtKey;
+                    const subdomains = [0,1,2,3,4,5,6,7];
+                    const opts = { subdomains, zoomOffset: 1, maxNativeZoom: 17 };
+                    L.tileLayer(tdtImg, opts).addTo(demoMap);
+                    L.tileLayer(tdtLabel, opts).addTo(demoMap);
+                }
+            },
+            {
+                title: 'Step 3: 添加行政区边界 (GeoJSON)',
+                mapTitle: '南京市行政区边界',
+                code: `<span class="comment">// GeoJSON 行政区数据</span>
+<span class="keyword">const</span> boundary = {
+  <span class="property">"type"</span>: <span class="string">"Feature"</span>,
+  <span class="property">"geometry"</span>: {
+    <span class="property">"type"</span>: <span class="string">"Polygon"</span>,
+    <span class="property">"coordinates"</span>: [[[...]]]
+  },
+  <span class="property">"properties"</span>: {
+    <span class="property">"name"</span>: <span class="string">"南京市"</span>
+  }
+};
+
+<span class="comment">// 添加到地图</span>
+L.<span class="function">geoJSON</span>(boundary, {
+  <span class="property">style</span>: {
+    <span class="property">color</span>: <span class="string">'#22d3ee'</span>,
+    <span class="property">weight</span>: <span class="number">2</span>,
+    <span class="property">fillColor</span>: <span class="string">'#22d3ee'</span>,
+    <span class="property">fillOpacity</span>: <span class="number">0.1</span>
+  }
+}).<span class="function">addTo</span>(map);
+
+<span class="comment">// 适配视图到边界范围</span>
+map.<span class="function">fitBounds</span>(layer.<span class="function">getBounds</span>());`,
+                run: function() {
+                    const layer = L.geoJSON(nanjingBoundary, {
+                        style: {
+                            color: '#22d3ee',
+                            weight: 2,
+                            fillColor: '#22d3ee',
+                            fillOpacity: 0.1,
+                            dashArray: '5, 5'
+                        },
+                        onEachFeature: (feature, layer) => {
+                            layer.bindTooltip(feature.properties.name, {
+                                permanent: true,
+                                direction: 'center',
+                                className: 'custom-label'
+                            });
+                        }
+                    }).addTo(demoMap);
+                    demoMap.fitBounds(layer.getBounds(), { padding: [20, 20] });
+                }
+            },
+            {
+                title: 'Step 4: 添加监控点位 (Markers)',
+                mapTitle: '监控点位分布',
+                code: `<span class="comment">// 监控点数据</span>
+<span class="keyword">const</span> points = [
+  { <span class="property">name</span>: <span class="string">"玄武湖监控站"</span>,
+    <span class="property">lng</span>: <span class="number">118.79</span>, <span class="property">lat</span>: <span class="number">32.08</span> },
+  { <span class="property">name</span>: <span class="string">"紫金山气象站"</span>,
+    <span class="property">lng</span>: <span class="number">118.85</span>, <span class="property">lat</span>: <span class="number">32.06</span> },
+  <span class="comment">// ... 更多点位</span>
+];
+
+<span class="comment">// 遍历添加标记</span>
+points.<span class="function">forEach</span>(p =&gt; {
+  <span class="keyword">const</span> marker = L.<span class="function">marker</span>(
+    [p.lat, p.lng]
+  ).<span class="function">addTo</span>(map);
+});`,
+                run: function() {
+                    monitoringPoints.forEach((p, i) => {
+                        const icon = L.divIcon({
+                            className: 'custom-marker',
+                            html: `<div style="
+                                width:14px;height:14px;border-radius:50%;
+                                background:${p.status === '告警' ? '#f43f5e' : '#22d3ee'};
+                                border:2px solid white;
+                                box-shadow:0 0 8px ${p.status === '告警' ? '#f43f5e' : '#22d3ee'};
+                                animation: markerPop 0.4s ease-out ${i * 0.15}s both;
+                            "></div>`,
+                            iconSize: [14, 14],
+                            iconAnchor: [7, 7]
+                        });
+                        const marker = L.marker([p.lat, p.lng], { icon }).addTo(demoMap);
+                        marker._pointData = p;
+                    });
+
+                    // Add marker pop animation
+                    const style = document.createElement('style');
+                    style.textContent = `@keyframes markerPop { 0%{transform:scale(0)} 50%{transform:scale(1.5)} 100%{transform:scale(1)} }`;
+                    document.head.appendChild(style);
+                }
+            },
+            {
+                title: 'Step 5: 添加弹窗交互 (Popup)',
+                mapTitle: '点击标记查看详情',
+                code: `<span class="comment">// 为每个标记绑定弹窗</span>
+points.<span class="function">forEach</span>(p =&gt; {
+  <span class="keyword">const</span> marker = L.<span class="function">marker</span>(
+    [p.lat, p.lng]
+  ).<span class="function">addTo</span>(map);
+
+  <span class="comment">// 绑定 Popup</span>
+  marker.<span class="function">bindPopup</span>(\`
+    &lt;div&gt;
+      &lt;h3&gt;\${p.name}&lt;/h3&gt;
+      &lt;p&gt;类型: \${p.type}&lt;/p&gt;
+      &lt;p&gt;状态: \${p.status}&lt;/p&gt;
+    &lt;/div&gt;
+  \`);
+});`,
+                run: function() {
+                    demoMap.eachLayer(layer => {
+                        if (layer instanceof L.Marker && layer._pointData) {
+                            const p = layer._pointData;
+                            const statusColor = p.status === '告警' ? '#f43f5e' : '#10b981';
+                            layer.bindPopup(`
+                                <div style="font-family:Inter,sans-serif;min-width:160px">
+                                    <div style="font-weight:700;font-size:14px;margin-bottom:6px">${p.name}</div>
+                                    <div style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#666">
+                                        <div style="display:flex;justify-content:space-between">
+                                            <span>类型</span><span style="color:#333">${p.type}</span>
+                                        </div>
+                                        <div style="display:flex;justify-content:space-between">
+                                            <span>状态</span><span style="color:${statusColor};font-weight:600">${p.status}</span>
+                                        </div>
+                                        <div style="display:flex;justify-content:space-between">
+                                            <span>坐标</span><span style="color:#333">${p.lng}, ${p.lat}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `);
+                        }
+                    });
+                }
+            },
+            {
+                title: 'Step 6: 添加动态效果 (雷达扫描)',
+                mapTitle: '雷达扫描动画',
+                code: `<span class="comment">// 添加雷达扫描动画</span>
+<span class="keyword">const</span> radarIcon = L.<span class="function">divIcon</span>({
+  <span class="property">className</span>: <span class="string">'radar'</span>,
+  <span class="property">html</span>: <span class="string">\`
+    &lt;div class="radar-container"&gt;
+      &lt;div class="radar-sweep"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  \`</span>,
+  <span class="property">iconSize</span>: [<span class="number">100</span>, <span class="number">100</span>]
+});
+
+L.<span class="function">marker</span>(
+  [<span class="number">32.06</span>, <span class="number">118.78</span>],
+  { <span class="property">icon</span>: radarIcon }
+).<span class="function">addTo</span>(map);`,
+                run: function() {
+                    // Add radar animation
+                    const radarStyle = document.createElement('style');
+                    radarStyle.textContent = `
+                        .radar-marker {
+                            border-radius: 50%;
+                            overflow: hidden;
+                        }
+                        .radar-sweep-inner {
+                            width: 80px; height: 80px;
+                            border-radius: 50%;
+                            position: relative;
+                            border: 1px solid rgba(34,211,238,0.3);
+                        }
+                        .radar-sweep-line {
+                            position: absolute;
+                            width: 100%; height: 100%;
+                            border-radius: 50%;
+                            background: conic-gradient(from 0deg, transparent 0%, rgba(34,211,238,0.4) 30%, transparent 30%);
+                            animation: radarSweep 2s linear infinite;
+                        }
+                        .radar-ring {
+                            position: absolute; border-radius: 50%;
+                            border: 1px solid rgba(34,211,238,0.2);
+                            animation: radarPulse 2s ease-out infinite;
+                        }
+                        @keyframes radarSweep {
+                            from { transform: rotate(0deg); }
+                            to { transform: rotate(360deg); }
+                        }
+                        @keyframes radarPulse {
+                            0% { width: 10px; height: 10px; top: 35px; left: 35px; opacity: 1; }
+                            100% { width: 80px; height: 80px; top: 0; left: 0; opacity: 0; }
+                        }
+                    `;
+                    document.head.appendChild(radarStyle);
+
+                    const radarIcon = L.divIcon({
+                        className: 'radar-marker',
+                        html: `
+                            <div class="radar-sweep-inner">
+                                <div class="radar-ring"></div>
+                                <div class="radar-ring" style="animation-delay:0.7s"></div>
+                                <div class="radar-ring" style="animation-delay:1.4s"></div>
+                                <div class="radar-sweep-line"></div>
+                                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:6px;height:6px;border-radius:50%;background:#22d3ee;box-shadow:0 0 8px #22d3ee;z-index:1"></div>
+                            </div>
+                        `,
+                        iconSize: [80, 80],
+                        iconAnchor: [40, 40]
+                    });
+
+                    L.marker([32.06, 118.78], { icon: radarIcon }).addTo(demoMap);
+
+                    // Also add a pulsing circle for the alert point
+                    const pulseIcon = L.divIcon({
+                        className: '',
+                        html: `<div style="position:relative;width:20px;height:20px">
+                            <div style="position:absolute;inset:0;border-radius:50%;background:#f43f5e;opacity:0.3;animation:alertPulse 1.5s ease-out infinite"></div>
+                            <div style="position:absolute;inset:3px;border-radius:50%;background:#f43f5e;box-shadow:0 0 6px #f43f5e"></div>
+                        </div>`,
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    });
+                    const alertStyle = document.createElement('style');
+                    alertStyle.textContent = `@keyframes alertPulse {
+                        0% { transform:scale(1);opacity:0.4; }
+                        100% { transform:scale(2.5);opacity:0; }
+                    }`;
+                    document.head.appendChild(alertStyle);
+
+                    L.marker([32.06, 118.85], { icon: pulseIcon }).addTo(demoMap);
+                }
+            }
+        ];
+
+        // Initialize code display
+        function showStep(stepIdx) {
+            const step = steps[stepIdx];
+            codeTitle.textContent = step.title;
+            mapTitle.textContent = step.mapTitle;
+            codeEl.innerHTML = step.code;
+            step.run();
+
+            // Update button states
+            stepBtns.forEach((btn, i) => {
+                btn.classList.remove('active', 'completed');
+                if (i === stepIdx) btn.classList.add('active');
+                else if (i < stepIdx) btn.classList.add('completed');
+            });
+        }
+
+        // Initialize step 0 display (without running)
+        if (steps.length > 0) {
+            codeTitle.textContent = steps[0].title;
+            mapTitle.textContent = steps[0].mapTitle;
+            codeEl.innerHTML = steps[0].code;
+        }
+
+        // Button click handlers
+        stepBtns.forEach((btn, i) => {
+            btn.addEventListener('click', () => {
+                if (i < currentStep) {
+                    // Already executed, just show code
+                    codeTitle.textContent = steps[i].title;
+                    mapTitle.textContent = steps[i].mapTitle;
+                    codeEl.innerHTML = steps[i].code;
+                    stepBtns.forEach((b, j) => {
+                        b.classList.remove('active', 'completed');
+                        if (j === i) b.classList.add('active');
+                        else if (j < i) b.classList.add('completed');
+                    });
+                    return;
+                }
+                // Run all steps from currentStep to i in order (skip already-run ones)
+                for (let s = currentStep; s <= i; s++) {
+                    steps[s].run();
+                }
+                currentStep = i;
+                // Show the selected step's code
+                codeTitle.textContent = steps[i].title;
+                mapTitle.textContent = steps[i].mapTitle;
+                codeEl.innerHTML = steps[i].code;
+                stepBtns.forEach((b, j) => {
+                    b.classList.remove('active', 'completed');
+                    if (j === i) b.classList.add('active');
+                    else if (j < i) b.classList.add('completed');
+                });
+            });
+        });
+    })();
+
+    // ================================================================
+    // 5. Lightbox
+    // ================================================================
+    (function initLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        const lbImg = lightbox.querySelector('img');
+        document.querySelectorAll('.slide-thumb').forEach(el => {
+            el.addEventListener('click', () => {
+                const src = el.dataset.src;
+                if (src) { lbImg.src = src; lightbox.classList.add('active'); }
+            });
+        });
+        lightbox.addEventListener('click', () => {
+            lightbox.classList.remove('active');
+        });
+    })();
+
+    // ================================================================
+    // 5b. SVG Modal (3D Tiles animation)
+    // ================================================================
+    (function initSvgModal() {
+        const modal = document.getElementById('svg-modal');
+        const content = document.getElementById('svg-modal-content');
+        const trigger = document.getElementById('tiles-anim-trigger');
+        if (!modal || !content || !trigger) return;
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const svg = trigger.querySelector('svg');
+            if (!svg) return;
+            content.innerHTML = '';
+            const clone = svg.cloneNode(true);
+            clone.style.width = 'min(75vw, 55vh)';
+            clone.style.height = 'min(75vw, 55vh)';
+            content.appendChild(clone);
+            modal.classList.add('active');
+        });
+
+        function close() { modal.classList.remove('active'); }
+        modal.addEventListener('click', close);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    })();
+
+    // ================================================================
+    // 5c. GIS Server URL Modal
+    // ================================================================
+    (function initGisServerModal() {
+        const modal = document.getElementById('gis-url-modal');
+        const box = document.getElementById('gis-modal-box');
+        const title = document.getElementById('gis-modal-title');
+        const body = document.getElementById('gis-modal-body');
+        const closeBtn = document.getElementById('gis-modal-close');
+        if (!modal || !box || !title || !body || !closeBtn) return;
+
+        const serverData = {
+            geoserver: {
+                name: 'GeoServer',
+                color: '#4ade80',
+                urls: [
+                    {
+                        label: 'WMS GetMap',
+                        badge: 'WMS',
+                        badgeColor: 'rgba(74,222,128,0.2)',
+                        url: 'http://localhost:8080/geoserver/wms?service=WMS&version=1.1.1&request=GetMap&layers=topp:states&styles=&srs=EPSG:4326&bbox=-124,24,-66,50&width=768&height=384&format=image/png',
+                        note: '关键标识：路径含 /geoserver/wms，参数 request=GetMap'
+                    },
+                    {
+                        label: 'WFS GetFeature',
+                        badge: 'WFS',
+                        badgeColor: 'rgba(74,222,128,0.2)',
+                        url: 'http://localhost:8080/geoserver/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=topp:states&outputFormat=application/json',
+                        note: '关键标识：路径含 /geoserver/wfs，参数 typeName 命名空间:图层名'
+                    },
+                    {
+                        label: 'WMTS GetCapabilities',
+                        badge: 'WMTS',
+                        badgeColor: 'rgba(74,222,128,0.2)',
+                        url: 'http://localhost:8080/geoserver/gwc/service/wmts?request=GetCapabilities',
+                        note: '关键标识：/gwc/service/wmts，GeoWebCache 瓦片缓存服务'
+                    },
+                    {
+                        label: 'REST API (管理接口)',
+                        badge: 'REST',
+                        badgeColor: 'rgba(74,222,128,0.2)',
+                        url: 'http://localhost:8080/geoserver/rest/layers.json',
+                        note: '关键标识：/geoserver/rest/，用于程序化管理图层、样式、工作区'
+                    }
+                ]
+            },
+            arcgis: {
+                name: 'ArcGIS Server',
+                color: '#60a5fa',
+                urls: [
+                    {
+                        label: 'Map Service',
+                        badge: 'MapServer',
+                        badgeColor: 'rgba(96,165,250,0.2)',
+                        url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer?f=json',
+                        note: '关键标识：/ArcGIS/rest/services/.../MapServer'
+                    },
+                    {
+                        label: 'Feature Service',
+                        badge: 'FeatureServer',
+                        badgeColor: 'rgba(96,165,250,0.2)',
+                        url: 'https://services.arcgis.com/your-org/arcgis/rest/services/LandUse/FeatureServer/0/query?where=1%3D1&returnGeometry=true&f=json',
+                        note: '关键标识：/FeatureServer/N/query，支持增删改查'
+                    },
+                    {
+                        label: 'Image Service',
+                        badge: 'ImageServer',
+                        badgeColor: 'rgba(96,165,250,0.2)',
+                        url: 'https://imagery.arcgisonline.com/ArcGIS/rest/services/World_Imagery/ImageServer/exportImage?bbox=-124,24,-66,50&format=jpgpng&f=json',
+                        note: '关键标识：/ImageServer/exportImage，栅格影像服务'
+                    },
+                    {
+                        label: 'Tile Service (XYZ)',
+                        badge: 'TileServer',
+                        badgeColor: 'rgba(96,165,250,0.2)',
+                        url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+                        note: '关键标识：/MapServer/tile/{z}/{y}/{x}，标准 XYZ 瓦片格式'
+                    }
+                ]
+            },
+            supermap: {
+                name: 'SuperMap iServer',
+                color: '#a78bfa',
+                urls: [
+                    {
+                        label: 'REST 地图服务',
+                        badge: 'REST Map',
+                        badgeColor: 'rgba(167,139,250,0.2)',
+                        url: 'http://localhost:8090/iserver/services/map-China/rest/maps/China',
+                        note: '关键标识：/iserver/services/map-xxx/rest/maps/'
+                    },
+                    {
+                        label: 'REST 数据服务',
+                        badge: 'REST Data',
+                        badgeColor: 'rgba(167,139,250,0.2)',
+                        url: 'http://localhost:8090/iserver/services/data-China/rest/data/datasets/Cities/features.json',
+                        note: '关键标识：/iserver/services/data-xxx/rest/data/datasets/'
+                    },
+                    {
+                        label: 'OGC WMS 兼容',
+                        badge: 'WMS',
+                        badgeColor: 'rgba(167,139,250,0.2)',
+                        url: 'http://localhost:8090/iserver/services/map-China/wms111/China?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=China&BBOX=73,3,136,54&WIDTH=800&HEIGHT=600&FORMAT=image/png',
+                        note: '关键标识：/iserver/services/.../wms111，同时支持 wms130'
+                    },
+                    {
+                        label: '三维 S3M / 3D Tiles',
+                        badge: '3D',
+                        badgeColor: 'rgba(167,139,250,0.2)',
+                        url: 'http://localhost:8090/iserver/services/3D-City/rest/realspace/datas/Building/config',
+                        note: '关键标识：/iserver/services/3D-xxx/rest/realspace/'
+                    }
+                ]
+            }
+        };
+
+        function escapeHtml(str) {
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function renderModal(key) {
+            const data = serverData[key];
+            if (!data) return;
+            title.textContent = data.name + ' \u2014 \u4EE3\u8868\u6027\u670D\u52A1 URL';
+            title.style.color = data.color;
+
+            let html = '';
+            data.urls.forEach(item => {
+                html += '<div class="url-group">';
+                html += '<div class="url-label" style="color:' + data.color + '">';
+                html += '<span class="badge" style="background:' + item.badgeColor + ';color:' + data.color + '">' + item.badge + '</span>';
+                html += ' ' + item.label;
+                html += '</div>';
+                html += '<div class="url-code">' + escapeHtml(item.url) + '</div>';
+                html += '<div class="url-note">' + escapeHtml(item.note) + '</div>';
+                html += '</div>';
+            });
+            body.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function close() { modal.classList.remove('active'); }
+
+        document.querySelectorAll('.gis-server-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const key = card.dataset.server;
+                if (key) renderModal(key);
+            });
+        });
+
+        closeBtn.addEventListener('click', (e) => { e.stopPropagation(); close(); });
+        modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('active')) close(); });
+    })();
+    </script>
+</body>
+</html>
